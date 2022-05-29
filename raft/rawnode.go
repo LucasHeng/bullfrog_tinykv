@@ -69,13 +69,22 @@ type Ready struct {
 // RawNode is a wrapper of Raft.
 type RawNode struct {
 	Raft *Raft
+
+	prevHs pb.HardState
+	prevSS SoftState
+
+	commitSinceIndex uint64
 	// Your Data Here (2A).
 }
 
 // NewRawNode returns a new RawNode given configuration and a list of raft peers.
 func NewRawNode(config *Config) (*RawNode, error) {
 	// Your Code Here (2A).
-	return nil, nil
+	rn := &RawNode{Raft: newRaft(config)}
+	rn.prevHs = rn.Raft.hardState()
+	rn.prevSS = rn.Raft.softState()
+	rn.commitSinceIndex = config.Applied
+	return rn, nil
 }
 
 // Tick advances the internal logical clock by a single tick.
@@ -143,12 +152,65 @@ func (rn *RawNode) Step(m pb.Message) error {
 // Ready returns the current point-in-time state of this RawNode.
 func (rn *RawNode) Ready() Ready {
 	// Your Code Here (2A).
-	return Ready{}
+	rd := Ready{}
+	ss := rn.Raft.softState()
+	if !compareSS(ss, rn.prevSS) {
+		rd.SoftState = &ss
+	}
+	hs := rn.Raft.hardState()
+	if !compareHs(hs, rn.prevHs) {
+		rd.HardState = hs
+	}
+	if len(rn.Raft.RaftLog.entries) != 0 {
+		// 找到未stabled的entries
+		rd.Entries = rn.Raft.RaftLog.entries[rn.Raft.RaftLog.stabled+1-rn.Raft.RaftLog.entries[0].Index:]
+		if flag == "copy" || flag == "all" {
+			DPrintf("entries: %v", rd.Entries)
+		}
+	}
+	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
+		rd.CommittedEntries = rn.Raft.RaftLog.entriesSince(rn.commitSinceIndex)
+		if flag == "copy" || flag == "all" {
+			DPrintf("committedEntries: %v", rd.CommittedEntries)
+		}
+	}
+	if len(rn.Raft.msgs) != 0 {
+		rd.Messages = rn.Raft.msgs
+	}
+	return rd
+}
+
+// hardstate比较
+func compareHs(l pb.HardState, r pb.HardState) bool {
+	return l.Term == r.Term && l.Vote == r.Vote && l.Commit == r.Commit
 }
 
 // HasReady called when RawNode user need to check if any Ready pending.
 func (rn *RawNode) HasReady() bool {
 	// Your Code Here (2A).
+	// 判断是否有新的东西需要更新
+	// 如新的entries，新的应用entries
+	// 新的状态？
+
+	// 有新的消息
+	if len(rn.Raft.msgs) != 0 {
+		return true
+	}
+
+	// 状态更新
+	if rn.Raft.softState() != rn.prevSS {
+		return true
+	}
+	if !compareHs(rn.Raft.hardState(), rn.prevHs) {
+		return true
+	}
+	// 有未持久的entries
+	if rn.Raft.RaftLog.LastIndex() > rn.Raft.RaftLog.stabled {
+		return true
+	}
+	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
+		return true
+	}
 	return false
 }
 
@@ -156,6 +218,22 @@ func (rn *RawNode) HasReady() bool {
 // last Ready results.
 func (rn *RawNode) Advance(rd Ready) {
 	// Your Code Here (2A).
+	if !compareHs(rd.HardState, pb.HardState{}) {
+		rn.prevHs = rd.HardState
+	}
+	if rd.SoftState != nil {
+		if !compareSS(*rd.SoftState, SoftState{}) {
+			rn.prevSS = *rd.SoftState
+		}
+	}
+	if len(rd.Entries) != 0 {
+		rn.Raft.RaftLog.stabled = rd.Entries[len(rd.Entries)-1].Index
+	}
+	// 更新已经commit且交给上层应用了的log index
+	if len(rd.CommittedEntries) != 0 {
+		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
+		rn.Raft.RaftLog.applied = rn.commitSinceIndex
+	}
 }
 
 // GetProgress return the Progress of this node and its peers, if this
@@ -173,4 +251,8 @@ func (rn *RawNode) GetProgress() map[uint64]Progress {
 // TransferLeader tries to transfer leadership to the given transferee.
 func (rn *RawNode) TransferLeader(transferee uint64) {
 	_ = rn.Raft.Step(pb.Message{MsgType: pb.MessageType_MsgTransferLeader, From: transferee})
+}
+
+func compareSS(s SoftState, ns SoftState) bool {
+	return s.Lead == ns.Lead && s.RaftState == ns.RaftState
 }
