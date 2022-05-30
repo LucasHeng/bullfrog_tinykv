@@ -181,7 +181,7 @@ func (p *peer) getPeerFromCache(peerID uint64) *metapb.Peer {
 }
 
 func (p *peer) nextProposalIndex() uint64 {
-	return p.RaftGroup.Raft.RaftLog.LastIndex() + 1
+	return p.RaftGroup.Raft.RaftLog.lastIndex() + 1
 }
 
 /// Tries to destroy itself. Returns a job (if needed) to do more cleaning tasks.

@@ -286,6 +286,7 @@ func (r *Raft) reset(term uint64) {
 		r.Term = term
 		r.Vote = None
 	}
+	// 重置时间和leade
 	r.Lead = None
 	r.resetrandElectionTimeout()
 	r.heartbeatElapsed = 0
@@ -454,7 +455,7 @@ func (r *Raft) hup() {
 			r.msgs = append(r.msgs, msg)
 		}
 	}
-	// 若只有一个raft
+	// 若只有一个raft,检查是否可以成为leader
 	granted, reject := r.countVote()
 	if granted > len(r.Prs)/2 {
 		r.becomeLeader()
@@ -605,7 +606,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		// 则可以往前探测
 		if m.Reject && m.LogTerm != None {
 			// 拒绝了
-			matchindex, _ = r.RaftLog.Findconflictbyterm(m.Index, m.LogTerm)
+			matchindex, _ = r.RaftLog.findConflictbyterm(m.Index, m.LogTerm)
 		}
 		if m.Reject {
 			progress.Next = min(matchindex+1, progress.Next-1)
@@ -613,6 +614,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 			progress.Next = matchindex + 1
 			progress.Match = matchindex
 		}
+		// 检测提交
 		N := r.RaftLog.LastIndex()
 		for ; N > r.RaftLog.committed; N-- {
 			cnt := 1
@@ -625,12 +627,14 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 				break
 			}
 		}
+		// 只提交当前term的log
 		committerm, _ := r.RaftLog.Term(N)
 		if N != r.RaftLog.committed && committerm == r.Term {
 			// 只提交当前term的log
 			r.RaftLog.commitTo(N)
 			r.broadcastAppend()
 		}
+		// 如果还有log没有发送匹配，立即发送消息
 		lastindex := r.RaftLog.LastIndex()
 		if progress.Next <= lastindex {
 			r.sendAppend(m.From)
@@ -674,7 +678,7 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
 		hintindex := min(m.Index, r.RaftLog.LastIndex())
 		// 优化一次找一个为一次找多个term
-		hintindex, hintterm := r.RaftLog.Findconflictbyterm(hintindex, m.LogTerm)
+		hintindex, hintterm := r.RaftLog.findConflictbyterm(hintindex, m.LogTerm)
 
 		msg.Index = hintindex
 		msg.LogTerm = hintterm
@@ -723,7 +727,7 @@ func (r *Raft) isLogmatch(index uint64, term uint64) bool {
 
 // 找到对应的term的index，小于等于对应term，因为这个对应的index的term没有匹配上，
 // 那么就应该是：往前走的term应该都是小于等于term
-func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64) {
+func (l *RaftLog) findConflictbyterm(index uint64, term uint64) (uint64, uint64) {
 	conflictindex := index
 	// 最少要发committed之前的
 	for conflictindex > l.committed {
@@ -731,6 +735,7 @@ func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64)
 		if tmpterm <= term {
 			return conflictindex, tmpterm
 		} else {
+			//要找比leader发来的消息还要小于等于的term
 			conflictindex--
 		}
 	}
