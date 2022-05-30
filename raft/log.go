@@ -189,10 +189,9 @@ func (l *RaftLog) AppendEntries(ents ...*pb.Entry) {
 
 func (l *RaftLog) commitTo(commit uint64) {
 	if l.committed < commit {
-		// todo : why there can commit : if commit > l.LastIndex()
-		//if commit > l.LastIndex() {
-		//	log.Fatalf("To commit log index > LastIndex")
-		//}
+		if commit > l.LastIndex() {
+			log.Fatalf("To commit log index > LastIndex")
+		}
 		l.committed = commit
 	}
 }

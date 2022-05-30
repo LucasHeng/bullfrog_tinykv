@@ -372,7 +372,6 @@ func TestCommitWithHeartbeat2AB(t *testing.T) {
 
 	// leader broadcast heartbeat
 	tt.send(pb.Message{From: 1, To: 1, MsgType: pb.MessageType_MsgBeat})
-
 	if sm.RaftLog.committed != 3 {
 		t.Errorf("committed = %d, want %d", sm.RaftLog.committed, 3)
 	}

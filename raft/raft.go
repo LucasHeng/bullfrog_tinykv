@@ -578,7 +578,11 @@ func (r *Raft) stepLeader(m pb.Message) {
 	case pb.MessageType_MsgRequestVote:
 		r.handleRequestVote(m)
 	case pb.MessageType_MsgRequestVoteResponse:
-
+	case pb.MessageType_MsgHeartbeatResponse:
+		pr := r.Prs[m.From]
+		if pr.Match < r.RaftLog.LastIndex() {
+			r.sendAppend(m.From)
+		}
 	}
 }
 
@@ -649,7 +653,6 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 		}
 		return
 	}
-
 	// leader的Term比我大，变成follower
 	// 修改lead为m.From
 	r.becomeFollower(m.Term, m.From)
@@ -746,7 +749,7 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 		return
 	}
 	r.becomeFollower(m.Term, m.From)
-	r.RaftLog.commitTo(m.Commit)
+	r.RaftLog.commitTo(min(m.Commit, r.RaftLog.LastIndex()))
 	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term}
 	r.msgs = append(r.msgs, msg)
 }
