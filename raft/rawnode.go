@@ -153,14 +153,17 @@ func (rn *RawNode) Step(m pb.Message) error {
 func (rn *RawNode) Ready() Ready {
 	// Your Code Here (2A).
 	rd := Ready{}
+	// ss是否有更新
 	ss := rn.Raft.softState()
 	if !compareSS(ss, rn.prevSS) {
 		rd.SoftState = &ss
 	}
+	// hs是否有更新
 	hs := rn.Raft.hardState()
 	if !compareHs(hs, rn.prevHs) {
 		rd.HardState = hs
 	}
+	// 是否有还未stable的entry
 	if len(rn.Raft.RaftLog.entries) != 0 {
 		// 找到未stabled的entries
 		rd.Entries = rn.Raft.RaftLog.entries[rn.Raft.RaftLog.stabled+1-rn.Raft.RaftLog.entries[0].Index:]
@@ -168,12 +171,14 @@ func (rn *RawNode) Ready() Ready {
 			DPrintf("entries: %v", rd.Entries)
 		}
 	}
+	// 是否还有commit但是还未apply的entries
 	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
 		rd.CommittedEntries = rn.Raft.RaftLog.entriesSince(rn.commitSinceIndex)
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
 	}
+	// 是否有新的消息
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
 	}
@@ -208,6 +213,7 @@ func (rn *RawNode) HasReady() bool {
 	if rn.Raft.RaftLog.LastIndex() > rn.Raft.RaftLog.stabled {
 		return true
 	}
+	// 有未应用的commit entry
 	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
 		return true
 	}
@@ -218,14 +224,17 @@ func (rn *RawNode) HasReady() bool {
 // last Ready results.
 func (rn *RawNode) Advance(rd Ready) {
 	// Your Code Here (2A).
+	// hs有更新就换
 	if !compareHs(rd.HardState, pb.HardState{}) {
 		rn.prevHs = rd.HardState
 	}
+	// ss有更新就换
 	if rd.SoftState != nil {
 		if !compareSS(*rd.SoftState, SoftState{}) {
 			rn.prevSS = *rd.SoftState
 		}
 	}
+	// 将entries持久化，更新stabled
 	if len(rd.Entries) != 0 {
 		rn.Raft.RaftLog.stabled = rd.Entries[len(rd.Entries)-1].Index
 	}
