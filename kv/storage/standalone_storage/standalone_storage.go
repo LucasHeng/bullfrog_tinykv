@@ -56,6 +56,6 @@ func (s *StandAloneStorage) Write(ctx *kvrpcpb.Context, batch []storage.Modify) 
 	if err := txn.Commit(); err != nil {
 		return err
 	}
-	defer txn.Discard()
+	//defer txn.Discard()
 	return nil
 }
