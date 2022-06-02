@@ -43,6 +43,7 @@ func (s *StandAloneStorage) Reader(ctx *kvrpcpb.Context) (storage.StorageReader,
 func (s *StandAloneStorage) Write(ctx *kvrpcpb.Context, batch []storage.Modify) error {
 	// Your Code Here (1)
 	txn := s.db.NewTransaction(true)
+	defer txn.Discard()
 	for _, v := range batch {
 		switch v.Data.(type) {
 		case storage.Put:
@@ -56,6 +57,5 @@ func (s *StandAloneStorage) Write(ctx *kvrpcpb.Context, batch []storage.Modify) 
 	if err := txn.Commit(); err != nil {
 		return err
 	}
-	//defer txn.Discard()
 	return nil
 }
