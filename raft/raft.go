@@ -187,16 +187,22 @@ func newRaft(c *Config) *Raft {
 		leadTransferee:      0, //3A
 		PendingConfIndex:    0, //3A
 	}
+	// 恢复初始状态？
+	if hs, cs, err := c.Storage.InitialState(); err == nil {
+		if len(cs.Nodes) != 0 {
+			c.peers = cs.Nodes
+		}
+		r.loadState(hs)
+		DPrintf("come here:%v", hs)
+	}
+
 	// 初始化和peer相关的状态
+	DPrintf("debug:", len(c.peers))
 	for _, pid := range c.peers {
 		r.Prs[pid] = &Progress{}
 		r.votes[pid] = false
 	}
-	// 恢复初始状态？
-	if hs, _, err := c.Storage.InitialState(); err == nil {
-		r.loadState(hs)
-		DPrintf("come here:%v", hs)
-	}
+
 	if c.Applied > 0 {
 		r.RaftLog.appliedTo(c.Applied)
 	}
