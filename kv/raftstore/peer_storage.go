@@ -308,6 +308,36 @@ func ClearMeta(engines *engine_util.Engines, kvWB, raftWB *engine_util.WriteBatc
 // never be committed
 func (ps *PeerStorage) Append(entries []eraftpb.Entry, raftWB *engine_util.WriteBatch) error {
 	// Your Code Here (2B).
+	if len(entries) == 0 {
+		return nil
+	}
+	firstIndex, _ := ps.FirstIndex()
+	lastIndex, _ := ps.LastIndex()
+	appendLast := entries[len(entries)-1].Index
+
+	// 已经truncated了
+	if firstIndex > appendLast {
+		return nil
+	}
+
+	// Append the given entries to the raft log
+	for _, entry := range entries {
+		raftWB.SetMeta(meta.RaftLogKey(ps.region.GetId(), entry.Index), &entry)
+	}
+
+	// update ps.raftState
+	ps.raftState.LastIndex = appendLast
+	ps.raftState.LastTerm = entries[len(entries)-1].Term
+
+	// delete log entries that will never be committed
+	// 将append进去的entries的lastIndex到原本在storage中的lastIndex之间的日志条目全部删除
+	// append进去的entries的firstIndex到lastIndex之间的条目已经将原本这些Index的条目覆盖了，
+	// 所以只要删除那些没有被覆盖的部分就行了
+	if appendLast < lastIndex {
+		for i := appendLast + 1; i <= lastIndex; i++ {
+			raftWB.DeleteMeta(meta.RaftLogKey(ps.region.GetId(), i))
+		}
+	}
 	return nil
 }
 
@@ -331,6 +361,14 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, error) {
 	// Hint: you may call `Append()` and `ApplySnapshot()` in this function
 	// Your Code Here (2B/2C).
+	// 将 raft.Ready 中的数据保存到 badger 中，包括追加日志和保存 Raft HardState。
+	raftWB := &engine_util.WriteBatch{}
+	ps.Append(ready.Entries, raftWB)
+	if !raft.IsEmptyHardState(ready.HardState) {
+		ps.raftState.HardState = &ready.HardState
+	}
+	raftWB.SetMeta(meta.RaftStateKey(ps.region.GetId()), ps.raftState)
+	raftWB.WriteToDB(ps.Engines.Raft)
 	return nil, nil
 }
 

@@ -189,6 +189,7 @@ func newRaft(c *Config) *Raft {
 	}
 	// 恢复初始状态？
 	if hs, cs, err := c.Storage.InitialState(); err == nil {
+		// c.peers只用于测试，lab2b用的是 cs.Nodes
 		if len(cs.Nodes) != 0 {
 			c.peers = cs.Nodes
 		}
