@@ -198,7 +198,7 @@ func newRaft(c *Config) *Raft {
 	}
 
 	// 初始化和peer相关的状态
-	DPrintf("debug:", len(c.peers))
+	//DPrintf("debug:", len(c.peers))
 	for _, pid := range c.peers {
 		r.Prs[pid] = &Progress{}
 		r.votes[pid] = false
@@ -414,6 +414,7 @@ func (r *Raft) stepFollower(m pb.Message) {
 		if r.Lead != None {
 			// 如果有别的主，那么转发
 			m.To = r.Lead
+			m.From = r.id
 			r.msgs = append(r.msgs, m)
 		}
 	case pb.MessageType_MsgAppend:
