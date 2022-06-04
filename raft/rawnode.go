@@ -163,7 +163,7 @@ func (rn *RawNode) Ready() Ready {
 	}
 	if len(rn.Raft.RaftLog.entries) != 0 {
 		// 找到未stabled的entries
-		rd.Entries = rn.Raft.RaftLog.entries[rn.Raft.RaftLog.stabled+1-rn.Raft.RaftLog.entries[0].Index:]
+		rd.Entries = rn.Raft.RaftLog.unstableEntries()
 		if flag == "copy" || flag == "all" {
 			DPrintf("entries: %v", rd.Entries)
 		}
@@ -177,6 +177,7 @@ func (rn *RawNode) Ready() Ready {
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
 	}
+	rn.Raft.msgs = make([]pb.Message, 0)
 	return rd
 }
 

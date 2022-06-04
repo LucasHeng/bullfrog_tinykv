@@ -77,7 +77,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		d.peerStorage.applyState.AppliedIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 		logWb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
 		logWb.WriteToDB(d.peerStorage.Engines.Kv)
-		fmt.Println(rd.CommittedEntries)
+		//fmt.Println(rd.CommittedEntries)
 	}
 	d.RaftGroup.Advance(rd)
 }
@@ -135,8 +135,11 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 					d.peerStorage.applyState.AppliedIndex = ent.Index
 					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
 					wb.WriteToDB(d.peerStorage.Engines.Kv)
-					fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
-					val, _ := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
+					//fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
+					val, err := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
+					if err != nil {
+						panic(err)
+					}
 					resp.Responses = []*raft_cmdpb.Response{
 						{
 							CmdType: raft_cmdpb.CmdType_Get,
@@ -154,6 +157,7 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 			}
 		}
 	}
+
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
@@ -241,7 +245,7 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			cb:    cb,
 		}
 		d.proposals = append(d.proposals, proposal)
-		fmt.Println(msg.Requests, "propose", len(d.proposals))
+		//fmt.Println(msg.Requests, "propose", len(d.proposals))
 		d.RaftGroup.Propose(reqMsg)
 	}
 }

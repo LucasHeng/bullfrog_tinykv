@@ -200,8 +200,11 @@ func newRaft(c *Config) *Raft {
 	// 初始化和peer相关的状态
 	//DPrintf("debug:", len(c.peers))
 	for _, pid := range c.peers {
-		r.Prs[pid] = &Progress{}
-		r.votes[pid] = false
+		if r.id == pid {
+			r.Prs[pid] = &Progress{Match: r.RaftLog.LastIndex(), Next: r.RaftLog.LastIndex() + 1}
+		} else {
+			r.Prs[pid] = &Progress{Match: 0, Next: r.RaftLog.LastIndex() + 1}
+		}
 	}
 
 	if c.Applied > 0 {
@@ -785,6 +788,7 @@ func (r *Raft) loadState(hs pb.HardState) bool {
 	r.RaftLog.committed = hs.Commit
 	r.Term = hs.Term
 	r.Vote = hs.Vote
+	//fmt.Printf("load hard state: term : %v, commit %v, vote : %v",r.Term, r.Vote, r.RaftLog.committed)
 	return true
 }
 
