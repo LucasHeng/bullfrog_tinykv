@@ -578,6 +578,9 @@ func (r *Raft) stepLeader(m pb.Message) {
 			}
 		}
 	case pb.MessageType_MsgPropose:
+		if flag == "2B" {
+			DPrintf("[Propose] id: %d, term: %d, leader: %d", r.id, r.Term, r.Lead)
+		}
 		// 提交entry,先给leader，再发给所有的
 		// 当前leader在转换？
 		// 先给自己添加entries
@@ -745,7 +748,7 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 	}
 	r.becomeFollower(m.Term, m.From)
 	r.RaftLog.commitTo(min(m.Commit, r.RaftLog.LastIndex()))
-	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term}
+	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term, Index: r.RaftLog.LastIndex()}
 	r.msgs = append(r.msgs, msg)
 }
 

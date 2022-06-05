@@ -355,6 +355,7 @@ func TestOnePartition2B(t *testing.T) {
 
 	region := cluster.GetRegion([]byte(""))
 	leader := cluster.LeaderOfRegion(region.GetId())
+	fmt.Println("【leader】", leader.Id)
 	s1 := []uint64{leader.GetStoreId()}
 	s2 := []uint64{}
 	for _, p := range region.GetPeers() {
@@ -380,6 +381,7 @@ func TestOnePartition2B(t *testing.T) {
 	cluster.ClearFilters()
 
 	// old leader in minority, new leader should be elected
+	fmt.Println("[Minority] Put")
 	s2 = append(s2, s1[2])
 	s1 = s1[:2]
 	cluster.AddFilter(&PartitionFilter{

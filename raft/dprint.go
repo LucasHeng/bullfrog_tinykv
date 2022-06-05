@@ -4,7 +4,7 @@ import "log"
 
 // Debugging
 const Debug = false
-const flag = "election"
+const flag = "2B"
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug {
