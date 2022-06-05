@@ -372,6 +372,10 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
 	}
 	r.RaftLog.AppendEntries(ents...)
+
+}
+
+func (r *Raft) updateCommit() {
 	N := r.RaftLog.LastIndex()
 	for ; N > r.RaftLog.committed; N-- {
 		cnt := 1
@@ -384,11 +388,10 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 			break
 		}
 	}
-	if N != r.RaftLog.committed {
-		if flag == "election" || flag == "all" {
-			DPrintf("{Node :%d} changed {commited: %d}", r.id, N)
-		}
-		r.RaftLog.committed = N
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && committerm == r.Term {
+		// 只提交当前term的log
+		r.RaftLog.commitTo(N)
 		r.broadcastAppend()
 	}
 }
@@ -581,6 +584,7 @@ func (r *Raft) stepLeader(m pb.Message) {
 		// 再给所有的peer发送
 		r.AppendEntries(m.Entries...)
 		r.broadcastAppend()
+		r.updateCommit()
 	case pb.MessageType_MsgAppend:
 		// leader也会收到Append消息
 		r.handleAppendEntries(m)
@@ -620,32 +624,12 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		}
 		if m.Reject {
 			progress.Next = min(matchindex+1, progress.Next-1)
+			r.sendAppend(m.From)
 		} else {
 			progress.Next = matchindex + 1
 			progress.Match = matchindex
 		}
-		N := r.RaftLog.LastIndex()
-		for ; N > r.RaftLog.committed; N-- {
-			cnt := 1
-			for id := range r.Prs {
-				if id != r.id && r.Prs[id].Match >= N {
-					cnt++
-				}
-			}
-			if cnt > len(r.Prs)/2 {
-				break
-			}
-		}
-		committerm, _ := r.RaftLog.Term(N)
-		if N != r.RaftLog.committed && committerm == r.Term {
-			// 只提交当前term的log
-			r.RaftLog.commitTo(N)
-			r.broadcastAppend()
-		}
-		lastindex := r.RaftLog.LastIndex()
-		if progress.Next <= lastindex {
-			r.sendAppend(m.From)
-		}
+		r.updateCommit()
 	}
 }
 

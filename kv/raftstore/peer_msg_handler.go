@@ -71,7 +71,10 @@ func (d *peerMsgHandler) HandleRaftReady() {
 				log.Fatal("msg unmarshal error:", err)
 			}
 			if len(msg.Requests) > 0 {
-				d.handleRequests(msg.Requests, &ent, logWb)
+				logWb = d.handleRequests(msg.Requests, &ent, logWb)
+			}
+			if d.stopped {
+				return
 			}
 		}
 		d.peerStorage.applyState.AppliedIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
@@ -82,7 +85,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	d.RaftGroup.Advance(rd)
 }
 
-func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *eraftpb.Entry, wb *engine_util.WriteBatch) {
+func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
 	for _, req := range requests {
 		switch req.CmdType {
 		case raft_cmdpb.CmdType_Put:
@@ -90,7 +93,7 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 		case raft_cmdpb.CmdType_Delete:
 			wb.DeleteCF(req.Delete.Cf, req.Delete.Key)
 		}
-		if len(d.proposals) > 0 {
+		if len(d.proposals) > 0 && d.IsLeader() {
 			propose := d.proposals[0]
 			for propose.index < ent.Index {
 				// 通知那些已经过时的propose结束
@@ -102,7 +105,7 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 				propose.cb.Done(ErrResp(&util.ErrStaleCommand{}))
 				d.proposals = d.proposals[1:]
 				if len(d.proposals) == 0 {
-					return
+					return wb
 				}
 				propose = d.proposals[0]
 			}
@@ -110,7 +113,7 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 				if propose.term != ent.Term {
 					NotifyStaleReq(ent.Term, propose.cb)
 					d.proposals = d.proposals[1:]
-					return
+					return wb
 				}
 				resp := &raft_cmdpb.RaftCmdResponse{
 					Header: &raft_cmdpb.RaftResponseHeader{},
@@ -135,6 +138,7 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 					d.peerStorage.applyState.AppliedIndex = ent.Index
 					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
 					wb.WriteToDB(d.peerStorage.Engines.Kv)
+					wb = &engine_util.WriteBatch{}
 					//fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
 					val, err := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
 					if err != nil {
@@ -149,6 +153,10 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 						},
 					}
 				case raft_cmdpb.CmdType_Snap:
+					d.peerStorage.applyState.AppliedIndex = ent.Index
+					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+					wb.WriteToDB(d.peerStorage.Engines.Kv)
+					wb = &engine_util.WriteBatch{}
 					resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
 					propose.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
 				}
@@ -157,7 +165,7 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 			}
 		}
 	}
-
+	return wb
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
