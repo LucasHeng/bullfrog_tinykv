@@ -7,7 +7,6 @@ import (
 )
 
 type BadgerReader struct {
-	db  *badger.DB
 	Txn *badger.Txn
 }
 
