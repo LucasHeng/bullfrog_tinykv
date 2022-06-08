@@ -5,6 +5,7 @@ import (
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/meta"
 	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
+	"github.com/pingcap-incubator/tinykv/raft"
 	"time"
 
 	"github.com/Connor1996/badger/y"
@@ -87,8 +88,10 @@ func (d *peerMsgHandler) HandleRaftReady() {
 
 func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
 	for _, req := range requests {
+		raft.ToBPrint("[handle ready] %v handle , type : %v", d.PeerId(), req.CmdType)
 		switch req.CmdType {
 		case raft_cmdpb.CmdType_Put:
+			raft.ToBPrint("[handle ready] %v handle put type , key : %v, value : %v", d.PeerId(), string(req.Put.Key), string(req.Put.Value))
 			wb.SetCF(req.Put.Cf, req.Put.Key, req.Put.Value)
 		case raft_cmdpb.CmdType_Delete:
 			wb.DeleteCF(req.Delete.Cf, req.Delete.Key)

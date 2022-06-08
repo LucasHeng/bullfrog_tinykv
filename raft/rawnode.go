@@ -169,7 +169,7 @@ func (rn *RawNode) Ready() Ready {
 		}
 	}
 	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
-		rd.CommittedEntries = rn.Raft.RaftLog.entriesSince(rn.commitSinceIndex)
+		rd.CommittedEntries = rn.Raft.RaftLog.nextEnts()
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
@@ -195,6 +195,10 @@ func (rn *RawNode) HasReady() bool {
 
 	// 有新的消息
 	if len(rn.Raft.msgs) != 0 {
+		return true
+	}
+
+	if len(rn.Raft.RaftLog.unstableEntries()) > 0 {
 		return true
 	}
 
