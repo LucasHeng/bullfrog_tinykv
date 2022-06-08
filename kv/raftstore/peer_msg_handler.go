@@ -2,6 +2,10 @@ package raftstore
 
 import (
 	"fmt"
+	"github.com/pingcap-incubator/tinykv/kv/raftstore/meta"
+	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
+	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
+	"github.com/pingcap-incubator/tinykv/raft"
 	"time"
 
 	"github.com/Connor1996/badger/y"
@@ -38,11 +42,133 @@ func newPeerMsgHandler(peer *peer, ctx *GlobalContext) *peerMsgHandler {
 	}
 }
 
+// todo: raft implement have problem
 func (d *peerMsgHandler) HandleRaftReady() {
 	if d.stopped {
 		return
 	}
 	// Your Code Here (2B).
+	if !d.RaftGroup.HasReady() {
+		return
+	}
+	rd := d.RaftGroup.Ready()
+	// 添加entries和hard state
+	_, err := d.peerStorage.SaveReadyState(&rd)
+	if err != nil {
+		panic(err)
+	}
+	// 如果 messages 不为空，就需要发送
+	if len(rd.Messages) != 0 {
+		d.Send(d.ctx.trans, rd.Messages)
+	}
+	// apply committed log
+	if len(rd.CommittedEntries) > 0 {
+		//fmt.Println(rd.CommittedEntries)
+		logWb := &engine_util.WriteBatch{}
+		for _, ent := range rd.CommittedEntries {
+			msg := &raft_cmdpb.RaftCmdRequest{}
+			err := msg.Unmarshal(ent.Data)
+			if err != nil {
+				log.Fatal("msg unmarshal error:", err)
+			}
+			if len(msg.Requests) > 0 {
+				logWb = d.handleRequests(msg.Requests, &ent, logWb)
+			}
+			if d.stopped {
+				return
+			}
+		}
+		d.peerStorage.applyState.AppliedIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
+		logWb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+		logWb.WriteToDB(d.peerStorage.Engines.Kv)
+		//fmt.Println(rd.CommittedEntries)
+	}
+	d.RaftGroup.Advance(rd)
+}
+
+func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
+	for _, req := range requests {
+		raft.ToBPrint("[handle ready] %v handle , type : %v", d.PeerId(), req.CmdType)
+		switch req.CmdType {
+		case raft_cmdpb.CmdType_Put:
+			raft.ToBPrint("[handle ready] %v handle put type , key : %v, value : %v", d.PeerId(), string(req.Put.Key), string(req.Put.Value))
+			wb.SetCF(req.Put.Cf, req.Put.Key, req.Put.Value)
+		case raft_cmdpb.CmdType_Delete:
+			wb.DeleteCF(req.Delete.Cf, req.Delete.Key)
+		}
+		if len(d.proposals) > 0 && d.IsLeader() {
+			propose := d.proposals[0]
+			for propose.index < ent.Index {
+				// 通知那些已经过时的propose结束
+				/*
+					实验指导书：
+					ErrStaleCommand：可能由于领导者的变化，一些日志没有被提交，就被新的领导者的日志所覆盖。
+					但是客户端并不知道，仍然在等待响应。所以你应该返回这个命令，让客户端知道并再次重试该命令。
+				*/
+				propose.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+				d.proposals = d.proposals[1:]
+				if len(d.proposals) == 0 {
+					return wb
+				}
+				propose = d.proposals[0]
+			}
+			if propose.index == ent.Index {
+				if propose.term != ent.Term {
+					NotifyStaleReq(ent.Term, propose.cb)
+					d.proposals = d.proposals[1:]
+					return wb
+				}
+				resp := &raft_cmdpb.RaftCmdResponse{
+					Header: &raft_cmdpb.RaftResponseHeader{},
+				}
+				switch req.CmdType {
+				case raft_cmdpb.CmdType_Put:
+					resp.Responses = []*raft_cmdpb.Response{
+						{
+							CmdType: raft_cmdpb.CmdType_Put,
+							Put:     &raft_cmdpb.PutResponse{},
+						},
+					}
+				case raft_cmdpb.CmdType_Delete:
+					resp.Responses = []*raft_cmdpb.Response{
+						{
+							CmdType: raft_cmdpb.CmdType_Delete,
+							Delete:  &raft_cmdpb.DeleteResponse{},
+						},
+					}
+				case raft_cmdpb.CmdType_Get:
+					// 如果是get，为了确保能读到最新数据，应该将前面的batch 写入storage
+					d.peerStorage.applyState.AppliedIndex = ent.Index
+					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+					wb.WriteToDB(d.peerStorage.Engines.Kv)
+					wb = &engine_util.WriteBatch{}
+					//fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
+					val, err := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
+					if err != nil {
+						panic(err)
+					}
+					resp.Responses = []*raft_cmdpb.Response{
+						{
+							CmdType: raft_cmdpb.CmdType_Get,
+							Get: &raft_cmdpb.GetResponse{
+								Value: val,
+							},
+						},
+					}
+				case raft_cmdpb.CmdType_Snap:
+					d.peerStorage.applyState.AppliedIndex = ent.Index
+					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+					wb.WriteToDB(d.peerStorage.Engines.Kv)
+					wb = &engine_util.WriteBatch{}
+					resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+					propose.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+				}
+				propose.cb.Done(resp)
+				d.proposals = d.proposals[1:]
+			}
+		}
+	}
+	return wb
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
@@ -108,12 +234,31 @@ func (d *peerMsgHandler) preProposeRaftCommand(req *raft_cmdpb.RaftCmdRequest) e
 }
 
 func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *message.Callback) {
+	// 将每条msg封装成一个ent
+	//fmt.Println(msg.Requests)
 	err := d.preProposeRaftCommand(msg)
 	if err != nil {
 		cb.Done(ErrResp(err))
 		return
 	}
 	// Your Code Here (2B).
+	// 不是snap和conf change 这种admin信息
+	if msg.AdminRequest == nil {
+		// 将指令封装成entries，propose给raft中其他所有的节点
+		// 并且在peer的proposals数组中append一个新propose，等待之后callback
+		reqMsg, err := msg.Marshal()
+		if err != nil {
+			log.Fatal("marshal error:", err)
+		}
+		proposal := &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		}
+		d.proposals = append(d.proposals, proposal)
+		//fmt.Println(msg.Requests, "propose", len(d.proposals))
+		d.RaftGroup.Propose(reqMsg)
+	}
 }
 
 func (d *peerMsgHandler) onTick() {

@@ -7,20 +7,18 @@ import (
 )
 
 type BadgerReader struct {
-	db  *badger.DB
 	Txn *badger.Txn
 }
 
 func NewBadgerReader(db *badger.DB) *BadgerReader {
 	txn := db.NewTransaction(false)
 	return &BadgerReader{
-		db:  db,
 		Txn: txn,
 	}
 }
 
 func (b *BadgerReader) GetCF(cf string, key []byte) ([]byte, error) {
-	data, err := engine_util.GetCF(b.db, cf, key)
+	data, err := engine_util.GetCFFromTxn(b.Txn, cf, key)
 	if err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
 			// it is not error
@@ -36,6 +34,5 @@ func (b *BadgerReader) IterCF(cf string) engine_util.DBIterator {
 }
 
 func (b *BadgerReader) Close() {
-	b.db = nil
 	b.Txn.Discard()
 }

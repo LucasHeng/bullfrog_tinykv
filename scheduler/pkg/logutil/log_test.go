@@ -95,8 +95,8 @@ func (s *testLogSuite) TestLogging(c *C) {
 	entry, err := s.buf.ReadString('\n')
 	c.Assert(err, IsNil)
 	c.Assert(entry, Matches, logPattern)
-	// All capnslog log will be trigered in logutil/log.go
-	c.Assert(strings.Contains(entry, "log.go"), IsTrue)
+	// All capnslog log will be trigered in logutil/log.txt
+	c.Assert(strings.Contains(entry, "log.txt"), IsTrue)
 
 	log.Warnf("this message comes from logrus")
 	entry, err = s.buf.ReadString('\n')

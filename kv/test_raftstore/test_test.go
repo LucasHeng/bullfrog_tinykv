@@ -3,6 +3,7 @@ package test_raftstore
 import (
 	"bytes"
 	"fmt"
+	"github.com/pingcap-incubator/tinykv/raft"
 	"math/rand"
 	_ "net/http/pprof"
 	"strconv"
@@ -355,6 +356,7 @@ func TestOnePartition2B(t *testing.T) {
 
 	region := cluster.GetRegion([]byte(""))
 	leader := cluster.LeaderOfRegion(region.GetId())
+	fmt.Println("【leader】", leader.Id)
 	s1 := []uint64{leader.GetStoreId()}
 	s2 := []uint64{}
 	for _, p := range region.GetPeers() {
@@ -380,6 +382,7 @@ func TestOnePartition2B(t *testing.T) {
 	cluster.ClearFilters()
 
 	// old leader in minority, new leader should be elected
+	fmt.Println("[Minority] Put")
 	s2 = append(s2, s1[2])
 	s1 = s1[:2]
 	cluster.AddFilter(&PartitionFilter{
@@ -391,7 +394,8 @@ func TestOnePartition2B(t *testing.T) {
 	MustGetEqual(cluster.engines[s1[0]], []byte("k1"), []byte("v1"))
 	MustGetEqual(cluster.engines[s1[1]], []byte("k1"), []byte("v1"))
 	cluster.ClearFilters()
-
+	fmt.Println("[Partition] 恢复正常")
+	raft.ToB = true
 	// when partition heals, old leader should sync data
 	cluster.MustPut([]byte("k2"), []byte("v2"))
 	MustGetEqual(cluster.engines[s1[0]], []byte("k2"), []byte("v2"))

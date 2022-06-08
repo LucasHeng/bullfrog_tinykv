@@ -151,6 +151,7 @@ func (l *RaftLog) appliedTo(i uint64) {
 // 获得相应区间的entries
 func (l *RaftLog) findentries(lo uint64, hi uint64) []pb.Entry {
 	var ents []pb.Entry
+
 	// 如果有一部分在storage里面，先找那一部分
 	if lo <= l.stabled {
 		stable_ents, _ := l.storage.Entries(lo, min(hi, l.stabled+1))
@@ -190,7 +191,7 @@ func (l *RaftLog) AppendEntries(ents ...*pb.Entry) {
 func (l *RaftLog) commitTo(commit uint64) {
 	if l.committed < commit {
 		if commit > l.LastIndex() {
-			log.Fatalf("To commit log index > LastIndex")
+			return
 		}
 		l.committed = commit
 	}

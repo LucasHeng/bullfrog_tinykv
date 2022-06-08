@@ -249,6 +249,7 @@ func (bs *Raftstore) start(
 		schedulerClient:      schedulerClient,
 		tickDriverSender:     bs.tickDriver.newRegionCh,
 	}
+	// 一个store可能有多个peer，不过这应该是lab3的
 	regionPeers, err := bs.loadPeers()
 	if err != nil {
 		return err
@@ -257,6 +258,7 @@ func (bs *Raftstore) start(
 	for _, peer := range regionPeers {
 		bs.router.register(peer)
 	}
+	// 启动 worker
 	bs.startWorkers(regionPeers)
 	return nil
 }
