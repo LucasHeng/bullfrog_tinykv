@@ -42,6 +42,28 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	if d.stopped {
 		return
 	}
+	if !d.RaftGroup.HasReady() {
+		return
+	}
+
+	rd := d.RaftGroup.Ready()
+
+	// 处理ready
+	_, err := d.peerStorage.SaveReadyState(&rd)
+
+	if err != nil {
+		// error处理
+		return
+	}
+
+	if rd.SoftState != nil {
+		// ss应该怎么弄？
+	}
+
+	if len(rd.Messages) != 0 {
+		d.Send(d.ctx.trans, rd.Messages)
+	}
+
 	// Your Code Here (2B).
 }
 
@@ -114,6 +136,18 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		return
 	}
 	// Your Code Here (2B).
+	// 放入回调
+	d.proposals = append(d.proposals, &proposal{
+		index: d.nextProposalIndex(),
+		term:  d.Term(),
+		cb:    cb,
+	})
+	// 往raftnode发propose
+	data, err := msg.Marshal()
+	if err != nil {
+		panic(err)
+	}
+	d.RaftGroup.Propose(data)
 }
 
 func (d *peerMsgHandler) onTick() {
