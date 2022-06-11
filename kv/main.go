@@ -57,6 +57,8 @@ func main() {
 	if err := storage.Start(); err != nil {
 		log.Fatal(err)
 	}
+	// tinykv server，接受外部client的消息
+	// storage,有单机和raft两种
 	server := server.NewServer(storage)
 
 	var alivePolicy = keepalive.EnforcementPolicy{
@@ -64,13 +66,16 @@ func main() {
 		PermitWithoutStream: true,            // Allow pings even when there are no active streams
 	}
 
+	// grpc server,可以注册服务，并且管理发送来的rpc请求，路由到正确的service的server
 	grpcServer := grpc.NewServer(
 		grpc.KeepaliveEnforcementPolicy(alivePolicy),
 		grpc.InitialWindowSize(1<<30),
 		grpc.InitialConnWindowSize(1<<30),
 		grpc.MaxRecvMsgSize(10*1024*1024),
 	)
+	// 注册tinykv server的服务
 	tinykvpb.RegisterTinyKvServer(grpcServer, server)
+	// 拿到端口号
 	listenAddr := conf.StoreAddr[strings.IndexByte(conf.StoreAddr, ':'):]
 	l, err := net.Listen("tcp", listenAddr)
 	if err != nil {

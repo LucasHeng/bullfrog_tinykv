@@ -200,6 +200,7 @@ type workers struct {
 	wg               *sync.WaitGroup
 }
 
+// 有storereciver,有ticker，有router
 type Raftstore struct {
 	ctx        *GlobalContext
 	storeState *storeState
@@ -301,7 +302,9 @@ func (bs *Raftstore) shutDown() {
 }
 
 func CreateRaftstore(cfg *config.Config) (*RaftstoreRouter, *Raftstore) {
+	// 发送消息，state接受消息
 	storeSender, storeState := newStoreState(cfg)
+	// 发送器放进router中
 	router := newRouter(storeSender)
 	raftstore := &Raftstore{
 		router:     router,
