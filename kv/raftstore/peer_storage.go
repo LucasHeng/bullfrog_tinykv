@@ -361,7 +361,10 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 	var result *ApplySnapResult
 	var err error
 	if ps.isInitialized() {
-		ps.clearMeta(kvWB, raftWB)
+		err = ps.clearMeta(kvWB, raftWB)
+		if err != nil {
+			return result, err
+		}
 		ps.clearExtraData(snapData.Region)
 	}
 	// 更新 raftState
@@ -379,6 +382,7 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 	// 通过 ps.regionSched 向 region worker 发送 RegionTaskApply 任务
 	notifier := make(chan bool, 1)
 	// apply snapshot,交给 worker 去处理
+	fmt.Println(raft.IsEmptySnap(snapshot))
 	ps.regionSched <- &runner.RegionTaskApply{
 		RegionId: snapData.Region.Id,
 		Notifier: notifier,
@@ -391,7 +395,7 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 		Region:     snapData.Region,
 	}
 	meta.WriteRegionState(kvWB, snapData.Region, rspb.PeerState_Normal)
-	return result, err
+	return result, nil
 }
 
 // Save memory states to disk.

@@ -247,6 +247,7 @@ func (rn *RawNode) Advance(rd Ready) {
 		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 		rn.Raft.RaftLog.applied = rn.commitSinceIndex
 	}
+	rn.Raft.RaftLog.pendingSnapshot = nil
 	rn.Raft.RaftLog.maybeCompact()
 }
 
