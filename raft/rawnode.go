@@ -247,7 +247,9 @@ func (rn *RawNode) Advance(rd Ready) {
 		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 		rn.Raft.RaftLog.applied = rn.commitSinceIndex
 	}
+	// 这里得清空 pendingSnapshot，不然在最后一个test会出现找到空 snap 文件的情况
 	rn.Raft.RaftLog.pendingSnapshot = nil
+	// 可能需要更新 raft 的 compact 状态
 	rn.Raft.RaftLog.maybeCompact()
 }
 

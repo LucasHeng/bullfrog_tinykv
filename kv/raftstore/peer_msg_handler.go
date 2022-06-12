@@ -85,6 +85,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 			if len(msg.Requests) > 0 {
 				logWb = d.handleRequests(msg.Requests, &ent, logWb)
 			}
+			// 处理像 compact .... 这些的 admin request，然后一起批量写入
 			if msg.AdminRequest != nil {
 				logWb = d.handleAdminRequests(msg.AdminRequest, logWb)
 			}
@@ -290,7 +291,9 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		//kvWb := &engine_util.WriteBatch{}
 		switch msg.AdminRequest.CmdType {
 		case raft_cmdpb.AdminCmdType_CompactLog:
-			// 交给 ready 去处理
+			// 跟上面逻辑保持一致，直接交给 ready 去处理
+			// 这里也能直接处理我感觉，但是也不一定会更快，毕竟都是同步的，
+			// 而且感觉交给 ready 然后一起 write batch 性能会更好
 			data, err := msg.Marshal()
 			if err != nil {
 				panic(err)

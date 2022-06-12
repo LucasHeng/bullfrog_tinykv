@@ -227,6 +227,7 @@ func (r *Raft) sendAppend(to uint64) bool {
 	var err error
 	msg.LogTerm, err = r.RaftLog.Term(msg.Index)
 	if err != nil {
+		// 如果对应的 index 是被截断了，就需要发送 snapshot
 		if err == ErrCompacted {
 			r.sendSnapshot(to)
 			return false

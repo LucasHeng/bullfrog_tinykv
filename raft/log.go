@@ -52,7 +52,8 @@ type RaftLog struct {
 	// the incoming unstable snapshot, if any.
 	// (Used in 2C)
 	pendingSnapshot *pb.Snapshot
-	snapIndex       uint64
+	// snapIndex 只在snapshot/截断时更新，可以理解为内存中 entries的firstIndex
+	snapIndex uint64
 
 	// Your Data Here (2A).
 }
@@ -88,13 +89,16 @@ func newLog(storage Storage) *RaftLog {
 func (l *RaftLog) maybeCompact() {
 	// Your Code Here (2C).
 	index, _ := l.storage.FirstIndex()
+	// 如果 first index > snapIndex,说明在这段时间又截断了某些日志，因此需要同步更新内存中的状态
 	if index > l.snapIndex {
 		fmt.Println("----------", l.snapIndex, "----", index-l.snapIndex, len(l.entries))
 		if len(l.entries) > 0 {
+			// 酱紫更省空间
 			entries := l.entries[index-l.snapIndex:]
 			l.entries = make([]pb.Entry, len(entries))
 			copy(l.entries, entries)
 		}
+		// update
 		l.snapIndex = index
 	}
 }
@@ -103,6 +107,10 @@ func (l *RaftLog) maybeCompact() {
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
 	// 若stabled在中
+	// 需要从上次截断的开始
+	// 一开始我们的实现是在这里截断日志：l.entries = l.entries[l.stabled+1-l.entries[0].Index:]
+	// 因为有了 maybeCompact，所以日志只需要在那边截断，这边不需要跟着 stabled来截断日志
+	// 只需要返回对应 log 即可
 	if len(l.entries) != 0 && l.stabled+1 >= l.snapIndex {
 		return l.entries[l.stabled+1-l.snapIndex:]
 	}
@@ -152,8 +160,8 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 		return l.entries[i-l.entries[0].Index].Term, nil
 	}
 	term, err := l.storage.Term(i)
+	// 这里需要判断一下，如果是被截断了，那么就要返回 errCompact
 	if err == ErrUnavailable && !IsEmptySnap(l.pendingSnapshot) {
-
 		if i == l.pendingSnapshot.Metadata.Index {
 			return l.pendingSnapshot.Metadata.Term, nil
 		} else {
