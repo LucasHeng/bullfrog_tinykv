@@ -223,7 +223,17 @@ func (r *Raft) sendAppend(to uint64) bool {
 	process := r.Prs[to]
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppend, To: to, From: r.id, Term: r.Term}
 	msg.Index = process.Next - 1
-	msg.LogTerm, _ = r.RaftLog.Term(msg.Index)
+	ToCPrint("[sendAppend] next : %v, match : %v ", process.Next, process.Match)
+	var err error
+	msg.LogTerm, err = r.RaftLog.Term(msg.Index)
+	ToCPrint("[sendAppend] err %v", err == ErrCompacted)
+	if err != nil {
+		if err == ErrCompacted {
+			r.sendSnapshot(to)
+			return false
+		}
+		return false
+	}
 	ents := r.RaftLog.findentries(process.Next, r.RaftLog.LastIndex()+1)
 	for i := range ents {
 		msg.Entries = append(msg.Entries, &ents[i])
@@ -235,6 +245,22 @@ func (r *Raft) sendAppend(to uint64) bool {
 		r.DebugEntries(msg.Entries)
 	}
 	return true
+}
+
+// 先实现最简单的一种：直接发送整个snapshot
+func (r *Raft) sendSnapshot(to uint64) {
+	snap, err := r.RaftLog.storage.Snapshot()
+	if err != nil {
+		return
+	}
+	r.msgs = append(r.msgs, pb.Message{
+		MsgType:  pb.MessageType_MsgSnapshot,
+		From:     r.id,
+		To:       to,
+		Snapshot: &snap,
+		Term:     r.Term,
+	})
+	r.Prs[to].Next = snap.Metadata.Index
 }
 
 func (r *Raft) DebugEntries(ents []*pb.Entry) {
@@ -594,7 +620,7 @@ func (r *Raft) stepLeader(m pb.Message) {
 			}
 		}
 	case pb.MessageType_MsgPropose:
-		ToBPrint("[Propose] id: %d, term: %d, content: %v", r.id, r.Term, m.Entries)
+		ToCPrint("[Propose] id: %d, term: %d, log Len %v, last Index %v", r.id, r.Term, len(r.RaftLog.entries), r.RaftLog.LastIndex())
 		// 提交entry,先给leader，再发给所有的
 		// 当前leader在转换？
 		// 先给自己添加entries
@@ -619,6 +645,8 @@ func (r *Raft) stepLeader(m pb.Message) {
 		if lastTerm > m.LogTerm || (lastTerm == m.LogTerm && r.RaftLog.LastIndex() > m.Index) {
 			r.sendAppend(m.From)
 		}
+	case pb.MessageType_MsgSnapshot:
+		r.handleSnapshot(m)
 	}
 }
 
@@ -791,6 +819,52 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 // handleSnapshot handle Snapshot RPC requesthandleHe
 func (r *Raft) handleSnapshot(m pb.Message) {
 	// Your Code Here (2C).
+	// reply immediately if m.Term < currentTerm
+	if m.Term < r.Term {
+		ToCPrint("[handleSnapshot] m.Term %v < r.Term %v , return", m.Term, r.Term)
+		r.sendSnapResp(m.From)
+		return
+	}
+	// 如果 m.Index 小于等于 r.RaftLog.committed，说明是个旧快照，直接返回
+	if m.Snapshot.Metadata.Index <= r.RaftLog.committed {
+		ToCPrint("[handleSnapshot] m.Snapshot.Metadata.Index %v <= r.RaftLog.committed %v , return", m.Index, r.RaftLog.committed)
+		r.sendSnapResp(m.From)
+		return
+	}
+
+	r.becomeFollower(m.Term, m.From)
+
+	// 丢弃自己的日志
+	r.RaftLog.entries = make([]pb.Entry, 0)
+	// 应用snapshot的状态
+	// Snapshot字段的含义：Data 即为 Pairs
+	// Metadata:SnapshotMetadata contains the log index and term of the last log applied to this Snapshot, along with the membership information of the time the last log applied.
+	// 也就是说， Index 就是快照前的leader applied， term 就是 applied index 对应的log term
+	metaData := m.Snapshot.Metadata
+	r.RaftLog.committed = metaData.Index
+	r.RaftLog.applied = metaData.Index
+	r.RaftLog.stabled = metaData.Index
+	r.RaftLog.pendingSnapshot = m.Snapshot
+	r.RaftLog.snapIndex = metaData.Index + 1
+
+	// change membership
+	for _, nodeId := range metaData.ConfState.Nodes {
+		r.Prs[nodeId] = &Progress{}
+	}
+	ToCPrint("[handleSnapshot] handle snapshot final")
+	r.sendSnapResp(m.From)
+}
+
+func (r *Raft) sendSnapResp(to uint64) {
+	msg := pb.Message{
+		MsgType: pb.MessageType_MsgAppendResponse,
+		To:      to,
+		From:    r.id,
+		Term:    r.Term,
+		Index:   r.RaftLog.LastIndex(),
+	}
+	r.msgs = append(r.msgs, msg)
+	ToCPrint("[sendSnapResp] %v send snap resp to %v, msg : %v", r.id, to, msg)
 }
 
 // addNode add a new node to raft group

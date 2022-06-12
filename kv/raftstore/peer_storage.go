@@ -363,6 +363,7 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 	// Your Code Here (2B/2C).
 	// 将 raft.Ready 中的数据保存到 badger 中，包括追加日志和保存 Raft HardState。
 	raftWB := &engine_util.WriteBatch{}
+	// 将 log append 入 writeBatch
 	ps.Append(ready.Entries, raftWB)
 	//  如果 HardState 有更新的话就更新
 	if !raft.IsEmptyHardState(ready.HardState) {

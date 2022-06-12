@@ -52,6 +52,7 @@ type RaftLog struct {
 	// the incoming unstable snapshot, if any.
 	// (Used in 2C)
 	pendingSnapshot *pb.Snapshot
+	snapIndex       uint64
 
 	// Your Data Here (2A).
 }
@@ -77,6 +78,7 @@ func newLog(storage Storage) *RaftLog {
 		stabled:         lastindex,
 		entries:         entries,
 		pendingSnapshot: nil, // not used in 2A
+		snapIndex:       firstIndex,
 	}
 }
 
@@ -107,11 +109,15 @@ func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
-	if len(l.entries) == 0 {
-		lastindex, _ := l.storage.LastIndex()
-		return lastindex
+	var snapIndex uint64 = 0
+	if !IsEmptySnap(l.pendingSnapshot) {
+		snapIndex = l.pendingSnapshot.Metadata.Index
 	}
-	return l.entries[len(l.entries)-1].Index
+	if len(l.entries) == 0 {
+		lastindex, _ := l.storage.FirstIndex()
+		return max(lastindex-1, snapIndex)
+	}
+	return max(l.entries[len(l.entries)-1].Index, snapIndex)
 }
 
 // 最后的entry的term
@@ -132,10 +138,18 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 	if i > lastindex {
 		return 0, fmt.Errorf("index out of range")
 	}
-	if i > l.stabled {
+	if i > l.stabled && i >= l.snapIndex {
 		return l.entries[i-l.entries[0].Index].Term, nil
 	}
-	return l.storage.Term(i)
+	term, err := l.storage.Term(i)
+	if err == ErrUnavailable && i < l.snapIndex && !IsEmptySnap(l.pendingSnapshot) {
+		if i == l.pendingSnapshot.Metadata.Index {
+			return l.pendingSnapshot.Metadata.Term, nil
+		} else {
+			return 0, ErrCompacted
+		}
+	}
+	return term, err
 }
 
 func (l *RaftLog) appliedTo(i uint64) {

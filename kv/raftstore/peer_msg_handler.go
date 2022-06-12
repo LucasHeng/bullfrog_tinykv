@@ -52,7 +52,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		return
 	}
 	rd := d.RaftGroup.Ready()
-	// 添加entries和hard state
+	// 持久化entries和hard state
 	_, err := d.peerStorage.SaveReadyState(&rd)
 	if err != nil {
 		panic(err)
@@ -258,6 +258,8 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		d.proposals = append(d.proposals, proposal)
 		//fmt.Println(msg.Requests, "propose", len(d.proposals))
 		d.RaftGroup.Propose(reqMsg)
+	} else {
+		// todo
 	}
 }
 
