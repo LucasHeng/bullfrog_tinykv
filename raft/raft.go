@@ -223,10 +223,9 @@ func (r *Raft) sendAppend(to uint64) bool {
 	process := r.Prs[to]
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppend, To: to, From: r.id, Term: r.Term}
 	msg.Index = process.Next - 1
-	ToCPrint("[sendAppend] next : %v, match : %v ", process.Next, process.Match)
+	//ToCPrint("[sendAppend] next : %v, match : %v ", process.Next, process.Match)
 	var err error
 	msg.LogTerm, err = r.RaftLog.Term(msg.Index)
-	ToCPrint("[sendAppend] err %v", err == ErrCompacted)
 	if err != nil {
 		if err == ErrCompacted {
 			r.sendSnapshot(to)
@@ -249,6 +248,7 @@ func (r *Raft) sendAppend(to uint64) bool {
 
 // 先实现最简单的一种：直接发送整个snapshot
 func (r *Raft) sendSnapshot(to uint64) {
+	ToCPrint("[sendSnapshot] %v send to %v", r.id, to)
 	snap, err := r.RaftLog.storage.Snapshot()
 	if err != nil {
 		return
@@ -820,6 +820,7 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 func (r *Raft) handleSnapshot(m pb.Message) {
 	// Your Code Here (2C).
 	// reply immediately if m.Term < currentTerm
+	ToCPrint("[handleSnapshot] %d receive snapshot from %v, snapshot:%v", r.id, m.From, m.Snapshot)
 	if m.Term < r.Term {
 		ToCPrint("[handleSnapshot] m.Term %v < r.Term %v , return", m.Term, r.Term)
 		r.sendSnapResp(m.From)

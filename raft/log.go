@@ -87,16 +87,26 @@ func newLog(storage Storage) *RaftLog {
 // grow unlimitedly in memory
 func (l *RaftLog) maybeCompact() {
 	// Your Code Here (2C).
+	index, _ := l.storage.FirstIndex()
+	if index > l.snapIndex {
+		fmt.Println("----------", l.snapIndex, "----", index-l.snapIndex, len(l.entries))
+		if len(l.entries) > 0 {
+			entries := l.entries[index-l.snapIndex:]
+			l.entries = make([]pb.Entry, len(entries))
+			copy(l.entries, entries)
+		}
+		l.snapIndex = index
+	}
 }
 
 // unstableEntries return all the unstable entries
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
 	// 若stabled在中
-	if len(l.entries) != 0 && l.stabled >= l.entries[0].Index {
-		l.entries = l.entries[l.stabled+1-l.entries[0].Index:]
+	if len(l.entries) != 0 && l.stabled+1 >= l.snapIndex {
+		return l.entries[l.stabled+1-l.snapIndex:]
 	}
-	return l.entries
+	return nil
 }
 
 // nextEnts returns all the committed but not applied entries
@@ -114,8 +124,8 @@ func (l *RaftLog) LastIndex() uint64 {
 		snapIndex = l.pendingSnapshot.Metadata.Index
 	}
 	if len(l.entries) == 0 {
-		lastindex, _ := l.storage.FirstIndex()
-		return max(lastindex-1, snapIndex)
+		lastindex, _ := l.storage.LastIndex()
+		return max(lastindex, snapIndex)
 	}
 	return max(l.entries[len(l.entries)-1].Index, snapIndex)
 }
@@ -138,11 +148,12 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 	if i > lastindex {
 		return 0, fmt.Errorf("index out of range")
 	}
-	if i > l.stabled && i >= l.snapIndex {
+	if i > l.stabled {
 		return l.entries[i-l.entries[0].Index].Term, nil
 	}
 	term, err := l.storage.Term(i)
-	if err == ErrUnavailable && i < l.snapIndex && !IsEmptySnap(l.pendingSnapshot) {
+	if err == ErrUnavailable && !IsEmptySnap(l.pendingSnapshot) {
+
 		if i == l.pendingSnapshot.Metadata.Index {
 			return l.pendingSnapshot.Metadata.Term, nil
 		} else {

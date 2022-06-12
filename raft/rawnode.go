@@ -174,6 +174,10 @@ func (rn *RawNode) Ready() Ready {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
 	}
+	if !IsEmptySnap(rn.Raft.RaftLog.pendingSnapshot) {
+		rd.Snapshot = *rn.Raft.RaftLog.pendingSnapshot
+		ToCPrint("[Ready] hash snap : %v", rd.Snapshot)
+	}
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
 	}
@@ -216,6 +220,10 @@ func (rn *RawNode) HasReady() bool {
 	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
 		return true
 	}
+	if !IsEmptySnap(rn.Raft.RaftLog.pendingSnapshot) {
+		ToCPrint("[HasReady] has snap")
+		return true
+	}
 	return false
 }
 
@@ -239,6 +247,7 @@ func (rn *RawNode) Advance(rd Ready) {
 		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 		rn.Raft.RaftLog.applied = rn.commitSinceIndex
 	}
+	rn.Raft.RaftLog.maybeCompact()
 }
 
 // GetProgress return the Progress of this node and its peers, if this

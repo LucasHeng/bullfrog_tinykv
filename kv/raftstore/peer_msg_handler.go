@@ -6,6 +6,7 @@ import (
 	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
 	"github.com/pingcap-incubator/tinykv/raft"
+	"reflect"
 	"time"
 
 	"github.com/Connor1996/badger/y"
@@ -53,9 +54,19 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	}
 	rd := d.RaftGroup.Ready()
 	// 持久化entries和hard state
-	_, err := d.peerStorage.SaveReadyState(&rd)
+	res, err := d.peerStorage.SaveReadyState(&rd)
 	if err != nil {
 		panic(err)
+	}
+	// 判断 region是否一样，否则就要更换 region
+	if res != nil && !reflect.DeepEqual(res.PrevRegion, res.Region) {
+		d.SetRegion(res.Region)
+		metaStore := d.ctx.storeMeta
+		metaStore.Lock()
+		metaStore.regions[res.Region.Id] = res.Region
+		metaStore.regionRanges.Delete(&regionItem{res.PrevRegion})
+		metaStore.regionRanges.ReplaceOrInsert(&regionItem{res.Region})
+		metaStore.Unlock()
 	}
 	// 如果 messages 不为空，就需要发送
 	if len(rd.Messages) != 0 {
@@ -74,6 +85,9 @@ func (d *peerMsgHandler) HandleRaftReady() {
 			if len(msg.Requests) > 0 {
 				logWb = d.handleRequests(msg.Requests, &ent, logWb)
 			}
+			if msg.AdminRequest != nil {
+				logWb = d.handleAdminRequests(msg.AdminRequest, logWb)
+			}
 			if d.stopped {
 				return
 			}
@@ -86,6 +100,20 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	d.RaftGroup.Advance(rd)
 }
 
+func (d *peerMsgHandler) handleAdminRequests(req *raft_cmdpb.AdminRequest, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
+	switch req.CmdType {
+	case raft_cmdpb.AdminCmdType_CompactLog:
+		compact := req.CompactLog
+		applyState := d.peerStorage.applyState
+		// update truncated state
+		if compact.CompactIndex >= applyState.TruncatedState.Index {
+			applyState.TruncatedState.Index = compact.CompactIndex
+			applyState.TruncatedState.Term = compact.CompactTerm
+			wb.SetMeta(meta.ApplyStateKey(d.regionId), applyState)
+		}
+	}
+	return wb
+}
 func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
 	for _, req := range requests {
 		raft.ToBPrint("[handle ready] %v handle , type : %v", d.PeerId(), req.CmdType)
@@ -259,7 +287,16 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		//fmt.Println(msg.Requests, "propose", len(d.proposals))
 		d.RaftGroup.Propose(reqMsg)
 	} else {
-		// todo
+		//kvWb := &engine_util.WriteBatch{}
+		switch msg.AdminRequest.CmdType {
+		case raft_cmdpb.AdminCmdType_CompactLog:
+			// 交给 ready 去处理
+			data, err := msg.Marshal()
+			if err != nil {
+				panic(err)
+			}
+			d.RaftGroup.Propose(data)
+		}
 	}
 }
 
