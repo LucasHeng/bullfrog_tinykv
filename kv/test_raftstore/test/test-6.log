@@ -1,0 +1,945 @@
+=== RUN   TestOnePartition2B
+2022/06/13 23:38:31.764092 node.go:193: [0;37m[info] start raft store node, storeID: 1[0m
+2022/06/13 23:38:31.764936 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 >  create peer with ID 1[0m
+2022/06/13 23:38:31 config:&{1 [] 10 2 0xc147d643c0 5}
+2022/06/13 23:38:31 come here:{5 0 5 {} [] 0}
+2022/06/13 23:38:31.765249 raftstore.go:174: [0;37m[info] start store 1, region_count 1, tombstone_count 0, takes 624.4µs[0m
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31.767244 node.go:193: [0;37m[info] start raft store node, storeID: 2[0m
+2022/06/13 23:38:31.767503 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 >  create peer with ID 2[0m
+2022/06/13 23:38:31 config:&{2 [] 10 2 0xc147d645a0 5}
+2022/06/13 23:38:31 come here:{5 0 5 {} [] 0}
+2022/06/13 23:38:31.767817 raftstore.go:174: [0;37m[info] start store 2, region_count 1, tombstone_count 0, takes 385.3µs[0m
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31.769398 node.go:193: [0;37m[info] start raft store node, storeID: 3[0m
+2022/06/13 23:38:31.769671 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 >  create peer with ID 3[0m
+2022/06/13 23:38:31 config:&{3 [] 10 2 0xc147d64780 5}
+2022/06/13 23:38:31 come here:{5 0 5 {} [] 0}
+2022/06/13 23:38:31.769899 raftstore.go:174: [0;37m[info] start store 3, region_count 1, tombstone_count 0, takes 297.1µs[0m
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31.771515 node.go:193: [0;37m[info] start raft store node, storeID: 4[0m
+2022/06/13 23:38:31.771770 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 >  create peer with ID 4[0m
+2022/06/13 23:38:31 config:&{4 [] 10 2 0xc147d64960 5}
+2022/06/13 23:38:31 come here:{5 0 5 {} [] 0}
+2022/06/13 23:38:31.772008 raftstore.go:174: [0;37m[info] start store 4, region_count 1, tombstone_count 0, takes 305.7µs[0m
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31.774149 node.go:193: [0;37m[info] start raft store node, storeID: 5[0m
+2022/06/13 23:38:31.774463 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 >  create peer with ID 5[0m
+2022/06/13 23:38:31 config:&{5 [] 10 2 0xc147d64b40 5}
+2022/06/13 23:38:31 come here:{5 0 5 {} [] 0}
+2022/06/13 23:38:31.774615 raftstore.go:174: [0;37m[info] start store 5, region_count 1, tombstone_count 0, takes 266.4µs[0m
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:31 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 1} send {Votereq:Term: 6, LogTerm: 5,Index: 5} to {Peer 3} with {state: StateCandidate} 
+2022/06/13 23:38:32 {Node: 1} send {Votereq:Term: 6, LogTerm: 5,Index: 5} to {Peer 4} with {state: StateCandidate} 
+2022/06/13 23:38:32 {Node: 1} send {Votereq:Term: 6, LogTerm: 5,Index: 5} to {Peer 5} with {state: StateCandidate} 
+2022/06/13 23:38:32 {Node: 1} send {Votereq:Term: 6, LogTerm: 5,Index: 5} to {Peer 2} with {state: StateCandidate} 
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 2} send {requestResp:Term: 6, Reject: false} to {Peer 1} in term: 6 with {state: StateFollower} 
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 5} send {requestResp:Term: 6, Reject: false} to {Peer 1} in term: 6 with {state: StateFollower} 
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 3} send {requestResp:Term: 6, Reject: false} to {Peer 1} in term: 6 with {state: StateFollower} 
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 4} send {requestResp:Term: 6, Reject: false} to {Peer 1} in term: 6 with {state: StateFollower} 
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node 1} receives RequestVoteResp from {Peer 5} with votes map[1:true 5:true] with {state: StateCandidate}
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node 1} receives RequestVoteResp from {Peer 4} with votes map[1:true 4:true 5:true] with {state: StateCandidate}
+2022/06/13 23:38:32 map[1:0xc000022a30 2:0xc000022a40 3:0xc000022a50 4:0xc000022a10 5:0xc000022a20] &{0 6} term:6 index:6 
+2022/06/13 23:38:32 {Node: 1} become leader in term: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5
+2022/06/13 23:38:32 entries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 2 in term: 6} 5,5,[term:6 index:6 ]
+2022/06/13 23:38:32 {Node 2} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 5,5,[term:6 index:6 ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 5,5,[term:6 index:6 ]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 3 in term: 6} 5,5,[term:6 index:6 ]
+2022/06/13 23:38:32 {Node 3} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 entries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 6
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 3} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 7
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 6,6,[]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 2 in term: 6} 5,5,[term:6 index:6 ]
+2022/06/13 23:38:32 {Node 2} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 3 in term: 6} 6,6,[]
+2022/06/13 23:38:32 {Node 3} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 7
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 5,5,[term:6 index:6 ]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 7
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 7
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 6 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 6 to hi: 7
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 6 [] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 2} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 3} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 2} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 6
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 6
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 6
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 6
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 map[1:0xc000022a30 2:0xc000022a40 3:0xc000022a50 4:0xc000022a10 5:0xc000022a20] &{6 7} term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" 
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 6
+2022/06/13 23:38:32 entries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 6
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 6
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 6,6,[term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 7 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 6,6,[term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 7 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 entries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 6,6,[term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 7 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 6,6,[term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 7 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1" ]} with committed: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 6 ents: []} with committed: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 6 ents: []} with committed: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 8
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 7,6,[]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 7 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 8
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 7,6,[]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 7 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 8
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 map[1:0xc000022a30 2:0xc000022a40 3:0xc000022a50 4:0xc000022a10 5:0xc000022a20] &{7 8} term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" 
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 6 ents: [term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 6 ents: [term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 7
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 7
+2022/06/13 23:38:32 entries: [{EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 8
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 7,6,[term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 8 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 6 ents: [term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 7
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 6 ents: [term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 7
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 8
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 7,6,[term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 8 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: [{EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 8
+2022/06/13 23:38:32 entries: [{EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 8
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 7,6,[term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 8 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 8
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 7,6,[term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 8 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 8
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: []} with committed: 8
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 6 ents: []} with committed: 8
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 9
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 8,6,[]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 8 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 9
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 5 in term: 6} 8,6,[]
+2022/06/13 23:38:32 {Node 5} send {AppendResp: Term: 6,LogTerm: 0,Index: 8 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 Node find entries_since from lo: 8 to hi: 9
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 committedEntries: [{EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 5} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 map[1:0xc000022a30 2:0xc000022a40 3:0xc000022a50 4:0xc000022a10 5:0xc000022a20] &{8 9} term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" 
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 entries: [{EntryNormal 6 9 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 8,6,[term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 9 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: [{EntryNormal 6 9 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 {Node: 1 in term:6} send {Node: 4 in term: 6} 8,6,[term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:32 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 9 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:32 entries: []
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:32 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:32 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 2} send {Votereq:Term: 7, LogTerm: 6,Index: 6} to {Peer 4} with {state: StateCandidate} 
+2022/06/13 23:38:33 {Node: 2} send {Votereq:Term: 7, LogTerm: 6,Index: 6} to {Peer 5} with {state: StateCandidate} 
+2022/06/13 23:38:33 {Node: 2} send {Votereq:Term: 7, LogTerm: 6,Index: 6} to {Peer 1} with {state: StateCandidate} 
+2022/06/13 23:38:33 {Node: 2} send {Votereq:Term: 7, LogTerm: 6,Index: 6} to {Peer 3} with {state: StateCandidate} 
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 3} send {requestResp:Term: 7, Reject: false} to {Peer 2} in term: 7 with {state: StateFollower} 
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node: 5} send {requestResp:Term: 7, Reject: true} to {Peer 2} in term: 7 with {state: StateFollower} 
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node 2} receives RequestVoteResp from {Peer 3} with votes map[2:true 3:true] with {state: StateCandidate}
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node 2} receives RequestVoteResp from {Peer 5} with votes map[2:true 3:true 5:false] with {state: StateCandidate}
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 map[1:0xc000022a30 2:0xc000022a40 3:0xc000022a50 4:0xc000022a10 5:0xc000022a20] &{9 10} term:6 index:10 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" 
+2022/06/13 23:38:33 {Node 1} in {term: 6} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:10 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:33 {Node 1} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:10 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:33 {Node 1} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:9 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:6 index:10 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:33 {Node 1} in {term: 6} send {Node: 4} {Appendmsg: Idx: 9 LogTerm: 6 ents: [term:6 index:10 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 8
+2022/06/13 23:38:33 entries: [{EntryNormal 6 10 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1 in term:6} send {Node: 4 in term: 6} 9,6,[term:6 index:10 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:33 {Node 4} send {AppendResp: Term: 6,LogTerm: 0,Index: 10 Reject: false} to {peer: 1} in {term : 6} with {state: StateFollower}
+2022/06/13 23:38:33 entries: [{EntryNormal 6 10 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node: 1} receive appeendresp from {peer 4} in {term : 6}with {state: StateLeader}
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 entries: []
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 entries: []
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5} send {Votereq:Term: 8, LogTerm: 6,Index: 8} to {Peer 4} with {state: StateCandidate} 
+2022/06/13 23:38:33 {Node: 5} send {Votereq:Term: 8, LogTerm: 6,Index: 8} to {Peer 1} with {state: StateCandidate} 
+2022/06/13 23:38:33 {Node: 5} send {Votereq:Term: 8, LogTerm: 6,Index: 8} to {Peer 2} with {state: StateCandidate} 
+2022/06/13 23:38:33 {Node: 5} send {Votereq:Term: 8, LogTerm: 6,Index: 8} to {Peer 3} with {state: StateCandidate} 
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 3} send {requestResp:Term: 8, Reject: false} to {Peer 5} in term: 8 with {state: StateFollower} 
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node: 2} send {requestResp:Term: 8, Reject: false} to {Peer 5} in term: 8 with {state: StateFollower} 
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node 5} receives RequestVoteResp from {Peer 3} with votes map[3:true 5:true] with {state: StateCandidate}
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node 5} receives RequestVoteResp from {Peer 2} with votes map[2:true 3:true 5:true] with {state: StateCandidate}
+2022/06/13 23:38:33 map[1:0xc000023c20 2:0xc000023c30 3:0xc000023c40 4:0xc000023c00 5:0xc000023c10] &{0 9} term:8 index:9 
+2022/06/13 23:38:33 {Node: 5} become leader in term: 8
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9 ]} with committed: 8
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9 ]} with committed: 8
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9 ]} with committed: 8
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9 ]} with committed: 8
+2022/06/13 23:38:33 entries: [{EntryNormal 8 9 [] {} [] 0}]
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5 in term:8} send {Node: 3 in term: 8} 8,6,[term:8 index:9 ]
+2022/06/13 23:38:33 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 6 Reject: true} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node: 5 in term:8} send {Node: 2 in term: 8} 8,6,[term:8 index:9 ]
+2022/06/13 23:38:33 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 6 Reject: true} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 7
+2022/06/13 23:38:33 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:9 ]} with committed: 8
+2022/06/13 23:38:33 entries: []
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:33 {Node: 5 in term:8} send {Node: 2 in term: 8} 6,6,[term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:9 ]
+2022/06/13 23:38:33 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 9 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:33 entries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0} {EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0} {EntryNormal 8 9 [] {} [] 0}]
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 9
+2022/06/13 23:38:33 committedEntries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0} {EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:9 ]} with committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:33 {Node: 5 in term:8} send {Node: 3 in term: 8} 6,6,[term:6 index:7 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k1\032\002v1"  term:6 index:8 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:9 ]
+2022/06/13 23:38:33 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 9 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:33 entries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0} {EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0} {EntryNormal 8 9 [] {} [] 0}]
+2022/06/13 23:38:33 Node find entries_since from lo: 7 to hi: 9
+2022/06/13 23:38:33 committedEntries: [{EntryNormal 6 7 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 49 26 2 118 49] {} [] 0} {EntryNormal 6 8 [10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9 ]} with committed: 9
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 9 LogTerm: 8 ents: []} with committed: 9
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 9 LogTerm: 8 ents: []} with committed: 9
+2022/06/13 23:38:33 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9 ]} with committed: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 10
+2022/06/13 23:38:33 committedEntries: [{EntryNormal 8 9 [] {} [] 0}]
+2022/06/13 23:38:33 {Node: 5 in term:8} send {Node: 2 in term: 8} 9,8,[]
+2022/06/13 23:38:33 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 9 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:33 entries: []
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 10
+2022/06/13 23:38:33 committedEntries: [{EntryNormal 8 9 [] {} [] 0}]
+2022/06/13 23:38:33 {Node: 5 in term:8} send {Node: 3 in term: 8} 9,8,[]
+2022/06/13 23:38:33 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 9 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:33 entries: []
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 10
+2022/06/13 23:38:33 committedEntries: [{EntryNormal 8 9 [] {} [] 0}]
+2022/06/13 23:38:33 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 2} m.committed: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 3} m.committed: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 4} m.committed: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 1} m.committed: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:33 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 2} m.committed: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 3} m.committed: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 4} m.committed: 9
+2022/06/13 23:38:33 {Node: 5} send heartbeat to {Node: 1} m.committed: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:33 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 4} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 1} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 2} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 3} m.committed: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 4} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 1} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 2} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 3} m.committed: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 4} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 1} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 2} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 3} m.committed: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 5} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 2} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 3} m.committed: 8
+2022/06/13 23:38:34 {Node: 1} send heartbeat to {Node: 4} m.committed: 8
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 4} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 1} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 2} m.committed: 9
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 3} m.committed: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 map[1:0xc000023c20 2:0xc000023c30 3:0xc000023c40 4:0xc000023c00 5:0xc000023c10] &{9 10} term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" 
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 9 LogTerm: 8 ents: [term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 9
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 9 LogTerm: 8 ents: [term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 9
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 9
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 9
+2022/06/13 23:38:34 entries: [{EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 9,8,[term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 10 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 9,8,[term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 10 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 entries: [{EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 10
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 10
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1" ]} with committed: 10
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 10 LogTerm: 8 ents: []} with committed: 10
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 10 LogTerm: 8 ents: []} with committed: 10
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 11
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 9
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 10,8,[]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 10 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 11
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 10,8,[]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 10 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 10 to hi: 11
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0}]
+2022/06/13 23:38:34 map[1:0xc000023c20 2:0xc000023c30 3:0xc000023c40 4:0xc000023c00 5:0xc000023c10] &{10 11} term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" 
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 10 LogTerm: 8 ents: [term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 10
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 10
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 10
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 10 LogTerm: 8 ents: [term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 10
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 10 LogTerm: 8 ents: [term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 10
+2022/06/13 23:38:34 entries: [{EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 11
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 10 LogTerm: 8 ents: [term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 10
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 11
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 10,8,[term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 11
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 10,8,[term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 10,8,[term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 11
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 10,8,[term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 11
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 11 LogTerm: 8 ents: []} with committed: 11
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 11
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed" ]} with committed: 11
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 11 LogTerm: 8 ents: []} with committed: 11
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 12
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 11,8,[]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 12
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 11,8,[]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 11 to hi: 12
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 map[1:0xc000023c20 2:0xc000023c30 3:0xc000023c40 4:0xc000023c00 5:0xc000023c10] &{11 12} term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" 
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed"  term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 11
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed"  term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 11
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 11 LogTerm: 8 ents: [term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 11
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 11 LogTerm: 8 ents: [term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 11
+2022/06/13 23:38:34 entries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 11 LogTerm: 8 ents: [term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 11
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 11 LogTerm: 8 ents: [term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 11
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 1 in term: 8} 8,6,[term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed"  term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node 1} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 9 [] {} [] 0} {EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0} {EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0} {EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 12
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 9 [] {} [] 0} {EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0} {EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 4 in term: 8} 8,6,[term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed"  term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node 4} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 9 [] {} [] 0} {EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0} {EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0} {EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 11,8,[term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 11,8,[term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 Node find entries_since from lo: 9 to hi: 12
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 9 [] {} [] 0} {EntryNormal 8 10 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 49] {} [] 0} {EntryNormal 8 11 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 26 8 3 34 22 10 7 100 101 102 97 117 108 116 18 2 107 49 26 7 99 104 97 110 103 101 100] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 1} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 11,8,[term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 1} {Appendmsg: Idx: 12 LogTerm: 8 ents: []} with committed: 12
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 2} {Appendmsg: Idx: 11 LogTerm: 8 ents: [term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 12
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 3} {Appendmsg: Idx: 12 LogTerm: 8 ents: []} with committed: 12
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 6 ents: [term:8 index:9  term:8 index:10 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\021\010\001\022\r\n\007default\022\002k1"  term:8 index:11 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\032\010\003\"\026\n\007default\022\002k1\032\007changed"  term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 12
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 4} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 13
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 11,8,[term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 1 in term: 8} 12,8,[]
+2022/06/13 23:38:34 {Node 1} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 13
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 3 in term: 8} 12,8,[]
+2022/06/13 23:38:34 {Node 3} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 {Node 4} send {AppendResp: Term: 8,LogTerm: 0,Index: 11 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 entries: []
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 2 in term: 8} 11,8,[term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 13
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 {Node 2} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 13
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 3} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 1} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 2} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 12
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 4} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 {Node 5} in {term: 8} send {Node: 4} {Appendmsg: Idx: 11 LogTerm: 8 ents: [term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 12
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 {Node: 5 in term:8} send {Node: 4 in term: 8} 11,8,[term:8 index:12 data:"\n\016\010\001\022\004\010\005\020\005\"\004\010\001\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]
+2022/06/13 23:38:34 {Node 4} send {AppendResp: Term: 8,LogTerm: 0,Index: 12 Reject: false} to {peer: 5} in {term : 8} with {state: StateFollower}
+2022/06/13 23:38:34 Node find entries_since from lo: 12 to hi: 13
+2022/06/13 23:38:34 committedEntries: [{EntryNormal 8 12 [10 14 8 1 18 4 8 5 16 5 34 4 8 1 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] {} [] 0}]
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 1} m.committed: 12
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 2} m.committed: 12
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 3} m.committed: 12
+2022/06/13 23:38:34 {Node: 5} send heartbeat to {Node: 4} m.committed: 12
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 {Node: 5} receive appeendresp from {peer 4} in {term : 8}with {state: StateLeader}
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34.486788 node.go:198: [0;37m[info] stop raft store thread, storeID: 1[0m
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34.488315 node.go:198: [0;37m[info] stop raft store thread, storeID: 2[0m
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34.489980 node.go:198: [0;37m[info] stop raft store thread, storeID: 3[0m
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34 Node find entries_since from lo: 13 to hi: 13
+2022/06/13 23:38:34.490095 node.go:198: [0;37m[info] stop raft store thread, storeID: 4[0m
+2022/06/13 23:38:34.490410 node.go:198: [0;37m[info] stop raft store thread, storeID: 5[0m
+--- PASS: TestOnePartition2B (3.94s)
+PASS

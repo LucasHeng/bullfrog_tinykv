@@ -344,8 +344,10 @@ func (r *Raft) becomeLeader() {
 			break
 		}
 	}
-	if N != r.RaftLog.committed {
-		r.RaftLog.committed = N
+	// raft figure 8
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && r.Term == committerm {
+		r.RaftLog.commitTo(N)
 		r.broadcastAppend()
 	}
 	if flag == "election" || flag == "all" {
@@ -384,11 +386,12 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 			break
 		}
 	}
-	if N != r.RaftLog.committed {
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && committerm == r.Term {
 		if flag == "election" || flag == "all" {
 			DPrintf("{Node :%d} changed {commited: %d}", r.id, N)
 		}
-		r.RaftLog.committed = N
+		r.RaftLog.commitTo(N)
 		r.broadcastAppend()
 	}
 }
@@ -590,8 +593,13 @@ func (r *Raft) stepLeader(m pb.Message) {
 		r.handleRequestVote(m)
 	case pb.MessageType_MsgRequestVoteResponse:
 	case pb.MessageType_MsgHeartbeatResponse:
-		pr := r.Prs[m.From]
-		if pr.Match < r.RaftLog.LastIndex() {
+		if m.Term > r.Term {
+			r.becomeFollower(m.Term, None)
+			return
+		}
+
+		lastTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
+		if lastTerm > m.LogTerm || (lastTerm == m.LogTerm && r.RaftLog.LastIndex() > m.Index) {
 			r.sendAppend(m.From)
 		}
 	}
@@ -756,7 +764,8 @@ func (l *RaftLog) findConflictbyterm(index uint64, term uint64) (uint64, uint64)
 func (r *Raft) handleHeartbeat(m pb.Message) {
 	// Your Code Here (2A).
 	if r.Term > m.Term {
-		msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term}
+		logTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
+		msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term, Index: r.RaftLog.LastIndex(), LogTerm: logTerm}
 		r.msgs = append(r.msgs, msg)
 		if flag == "copy" || flag == "all" {
 			DPrintf("{Node: %d} send {heartbeatResp:Term: %d} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, m.From, m.Term, r.State.String())
@@ -765,7 +774,8 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 	}
 	r.becomeFollower(m.Term, m.From)
 	r.RaftLog.commitTo(min(m.Commit, r.RaftLog.LastIndex()))
-	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term}
+	logTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
+	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term, Index: r.RaftLog.LastIndex(), LogTerm: logTerm}
 	r.msgs = append(r.msgs, msg)
 }
 

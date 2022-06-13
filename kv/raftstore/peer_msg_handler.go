@@ -165,7 +165,7 @@ func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	case message.MsgTypeRaftCmd:
 		raftCMD := msg.Data.(*message.MsgRaftCmd)
 		d.proposeRaftCommand(raftCMD.Request, raftCMD.Callback)
-		log.Infof("cmd:%v", raftCMD)
+		// log.Infof("cmd:%v", raftCMD)
 	case message.MsgTypeTick:
 		d.onTick()
 	case message.MsgTypeSplitRegion:
@@ -232,7 +232,7 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			term:  d.Term(),
 			cb:    cb,
 		})
-		log.Infof("msg:%v", msg)
+		// log.Infof("msg:%v", msg)
 		// 往raftnode发propose
 		data, err := msg.Marshal()
 		if err != nil {
