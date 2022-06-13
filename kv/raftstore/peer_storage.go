@@ -312,21 +312,30 @@ func (ps *PeerStorage) Append(entries []eraftpb.Entry, raftWB *engine_util.Write
 	if len(entries) == 0 {
 		return nil
 	}
+
+	// 得到先前的lastindex
+	prelastindex, _ := ps.LastIndex()
+	prefirstindex, _ := ps.FirstIndex()
+
+	// 已经truncated了
+	if prefirstindex > entries[len(entries)-1].Index {
+		return nil
+	}
+
 	// 插入entries
 	for _, e := range entries {
 		raftWB.SetMeta(meta.RaftLogKey(ps.region.GetId(), e.Index), &e)
 	}
-
-	// 得到先前的lastindex
-	prelastindex := ps.raftState.LastIndex
 
 	//更新raftstate,这里更新lastindex,lastterm
 	ps.raftState.LastIndex = entries[len(entries)-1].Index
 	ps.raftState.LastTerm = entries[len(entries)-1].Term
 
 	//删除在raftdb中，永远不可能应用的那部分log
-	for i := ps.raftState.LastIndex + 1; i <= prelastindex; i++ {
-		raftWB.DeleteMeta(meta.RaftLogKey(ps.region.GetId(), i))
+	if entries[len(entries)-1].Index < prelastindex {
+		for i := ps.raftState.LastIndex + 1; i <= prelastindex; i++ {
+			raftWB.DeleteMeta(meta.RaftLogKey(ps.region.GetId(), i))
+		}
 	}
 
 	return nil

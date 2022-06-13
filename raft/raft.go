@@ -397,6 +397,7 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 // on `eraftpb.proto` for what msgs should be handled
 func (r *Raft) Step(m pb.Message) error {
 	// Your Code Here (2A).
+	// log.Infof("step msg:%v,raftstate:%v", m, r.State.String())
 	switch r.State {
 	case StateFollower:
 		r.stepFollower(m)

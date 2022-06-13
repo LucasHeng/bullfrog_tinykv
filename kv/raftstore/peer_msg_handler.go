@@ -110,7 +110,7 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			}
 
 			// 回复
-			if len(d.proposals) != 0 {
+			if len(d.proposals) != 0 && d.IsLeader() {
 				proposal := d.proposals[0]
 				// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
 				for proposal.index < e.Index {
@@ -165,6 +165,7 @@ func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	case message.MsgTypeRaftCmd:
 		raftCMD := msg.Data.(*message.MsgRaftCmd)
 		d.proposeRaftCommand(raftCMD.Request, raftCMD.Callback)
+		log.Infof("cmd:%v", raftCMD)
 	case message.MsgTypeTick:
 		d.onTick()
 	case message.MsgTypeSplitRegion:
@@ -225,17 +226,20 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 	}
 	// Your Code Here (2B).
 	// 放入回调
-	d.proposals = append(d.proposals, &proposal{
-		index: d.nextProposalIndex(),
-		term:  d.Term(),
-		cb:    cb,
-	})
-	// 往raftnode发propose
-	data, err := msg.Marshal()
-	if err != nil {
-		panic(err)
+	if msg.AdminRequest == nil {
+		d.proposals = append(d.proposals, &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		})
+		log.Infof("msg:%v", msg)
+		// 往raftnode发propose
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.Propose(data)
 	}
-	d.RaftGroup.Propose(data)
 }
 
 func (d *peerMsgHandler) onTick() {
