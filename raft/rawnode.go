@@ -166,14 +166,14 @@ func (rn *RawNode) Ready() Ready {
 	// 是否有还未stable的entry
 	if len(rn.Raft.RaftLog.entries) != 0 {
 		// 找到未stabled的entries
-		rd.Entries = rn.Raft.RaftLog.entries[rn.Raft.RaftLog.stabled+1-rn.Raft.RaftLog.entries[0].Index:]
+		rd.Entries = rn.Raft.RaftLog.unstableEntries()
 		if flag == "copy" || flag == "all" {
 			DPrintf("entries: %v", rd.Entries)
 		}
 	}
 	// 是否还有commit但是还未apply的entries
 	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
-		rd.CommittedEntries = rn.Raft.RaftLog.entriesSince(rn.commitSinceIndex)
+		rd.CommittedEntries = rn.Raft.RaftLog.nextEnts()
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
@@ -182,6 +182,7 @@ func (rn *RawNode) Ready() Ready {
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
 	}
+	rn.Raft.msgs = make([]pb.Message, 0)
 	return rd
 }
 
