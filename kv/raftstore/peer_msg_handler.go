@@ -6,10 +6,13 @@ import (
 
 	"github.com/Connor1996/badger/y"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/message"
+	"github.com/pingcap-incubator/tinykv/kv/raftstore/meta"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/runner"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/snap"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/util"
+	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/log"
+	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/metapb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 	rspb "github.com/pingcap-incubator/tinykv/proto/pkg/raft_serverpb"
@@ -60,11 +63,96 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		// ss应该怎么弄？
 	}
 
+	// 处理messages
 	if len(rd.Messages) != 0 {
 		d.Send(d.ctx.trans, rd.Messages)
 	}
 
+	// 处理committed entries
+	if len(rd.CommittedEntries) != 0 {
+		d.HandleCommittedEntries(rd.CommittedEntries)
+	}
+
+	d.RaftGroup.Advance(rd)
 	// Your Code Here (2B).
+}
+
+func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) {
+	kvWB := &engine_util.WriteBatch{}
+	for _, e := range committedEntries {
+		d.HandleEntry(&e, kvWB)
+		if d.stopped {
+			return
+		}
+	}
+	d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
+	kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+	kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+}
+
+func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
+	// 解码出raftcmd
+	msg := &raft_cmdpb.RaftCmdRequest{}
+	err := msg.Unmarshal(e.Data)
+	if err != nil {
+		panic(err)
+	}
+	if len(msg.Requests) != 0 {
+		for _, req := range msg.Requests {
+			switch req.CmdType {
+			case raft_cmdpb.CmdType_Invalid:
+			case raft_cmdpb.CmdType_Get:
+			case raft_cmdpb.CmdType_Put:
+				kvWB.SetCF(req.Put.Cf, req.Put.GetKey(), req.Put.GetValue())
+			case raft_cmdpb.CmdType_Delete:
+				kvWB.DeleteCF(req.Delete.Cf, req.Delete.GetKey())
+			case raft_cmdpb.CmdType_Snap:
+			}
+
+			// 回复
+			if len(d.proposals) != 0 {
+				proposal := d.proposals[0]
+				// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+				for proposal.index < e.Index {
+					proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+					d.proposals = d.proposals[1:]
+					if len(d.proposals) == 0 {
+						// 没有proposal,结束这个
+						return
+					}
+				}
+				if proposal.index == e.Index {
+					if proposal.term != e.Term {
+						// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+						NotifyStaleReq(e.Index, proposal.cb)
+						d.proposals = d.proposals[1:]
+						return
+					}
+					resp := &raft_cmdpb.RaftCmdResponse{Header: &raft_cmdpb.RaftResponseHeader{}}
+
+					switch req.CmdType {
+					case raft_cmdpb.CmdType_Invalid:
+					case raft_cmdpb.CmdType_Get:
+						// get应该返回当前值
+						val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
+						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Get, Get: &raft_cmdpb.GetResponse{
+							Value: val,
+						}}}
+					case raft_cmdpb.CmdType_Put:
+						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Put, Put: &raft_cmdpb.PutResponse{}}}
+					case raft_cmdpb.CmdType_Delete:
+						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Delete, Delete: &raft_cmdpb.DeleteResponse{}}}
+					case raft_cmdpb.CmdType_Snap:
+						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+						proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+					}
+					// 对于request只有一个的情况
+					proposal.cb.Done(resp)
+					d.proposals = d.proposals[1:]
+				}
+			}
+		}
+	}
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
