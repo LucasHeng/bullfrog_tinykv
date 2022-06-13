@@ -180,6 +180,7 @@ func (ps *PeerStorage) Snapshot() (eraftpb.Snapshot, error) {
 	}
 
 	log.Infof("%s requesting snapshot", ps.Tag)
+	raft.ToCPrint("[Snapshot] %s requesting snapshot, state: %v", ps.Tag, ps.snapState.StateType)
 	ps.snapTriedCnt++
 	ch := make(chan *eraftpb.Snapshot, 1)
 	ps.snapState = snap.SnapState{

@@ -161,6 +161,9 @@ type Raft struct {
 	// value.
 	// (Used in 3A conf change)
 	PendingConfIndex uint64
+
+	SendSnapShot           map[uint64]int
+	PendingSnapshotTimeOut int
 }
 
 // newRaft return a raft peer with the given config
@@ -171,22 +174,24 @@ func newRaft(c *Config) *Raft {
 		panic(err)
 	}
 	r := &Raft{
-		id:                  c.ID,
-		Term:                0,
-		Vote:                None,
-		RaftLog:             newLog(c.Storage),
-		Prs:                 make(map[uint64]*Progress),
-		State:               StateFollower,
-		votes:               make(map[uint64]bool),
-		msgs:                make([]pb.Message, 0),
-		Lead:                None,
-		heartbeatTimeout:    c.HeartbeatTick,
-		electionTimeout:     c.ElectionTick,
-		heartbeatElapsed:    0,
-		electionElapsed:     0,
-		randElectionTimeout: 0,
-		leadTransferee:      0, //3A
-		PendingConfIndex:    0, //3A
+		id:                     c.ID,
+		Term:                   0,
+		Vote:                   None,
+		RaftLog:                newLog(c.Storage),
+		Prs:                    make(map[uint64]*Progress),
+		State:                  StateFollower,
+		votes:                  make(map[uint64]bool),
+		msgs:                   make([]pb.Message, 0),
+		Lead:                   None,
+		heartbeatTimeout:       c.HeartbeatTick,
+		electionTimeout:        c.ElectionTick,
+		heartbeatElapsed:       0,
+		electionElapsed:        0,
+		randElectionTimeout:    0,
+		leadTransferee:         0, //3A
+		PendingConfIndex:       0, //3A
+		PendingSnapshotTimeOut: 10,
+		SendSnapShot:           make(map[uint64]int),
 	}
 	// 恢复初始状态？
 	if hs, cs, err := c.Storage.InitialState(); err == nil {
@@ -250,8 +255,13 @@ func (r *Raft) sendAppend(to uint64) bool {
 // 先实现最简单的一种：直接发送整个snapshot
 func (r *Raft) sendSnapshot(to uint64) {
 	ToCPrint("[sendSnapshot] %v send to %v", r.id, to)
+	if _, ok := r.SendSnapShot[to]; ok {
+		ToCPrint("[sendSnapshot] %v already sended to %v, directly return", r.id, to)
+		return
+	}
 	snap, err := r.RaftLog.storage.Snapshot()
 	if err != nil {
+		fmt.Println("[get snapshot error]:", err)
 		return
 	}
 	r.msgs = append(r.msgs, pb.Message{
@@ -262,6 +272,7 @@ func (r *Raft) sendSnapshot(to uint64) {
 		Term:     r.Term,
 	})
 	r.Prs[to].Next = snap.Metadata.Index
+	r.SendSnapShot[to] = 0
 }
 
 func (r *Raft) DebugEntries(ents []*pb.Entry) {
@@ -285,6 +296,7 @@ func (r *Raft) sendHeartbeat(to uint64) {
 // tick advances the internal logical clock by a single tick.
 func (r *Raft) tick() {
 	// Your Code Here (2A).
+	r.tickSnap()
 	switch r.State {
 	case StateFollower, StateCandidate:
 		r.tickElection()
@@ -293,6 +305,15 @@ func (r *Raft) tick() {
 	}
 }
 
+func (r *Raft) tickSnap() {
+	for node, _ := range r.SendSnapShot {
+		r.SendSnapShot[node]++
+		if r.SendSnapShot[node] >= r.PendingSnapshotTimeOut {
+			ToCPrint("[tickSnap] pending snapshot time out ,delete ")
+			delete(r.SendSnapShot, node)
+		}
+	}
+}
 func (r *Raft) tickElection() {
 	r.electionElapsed++
 	if r.electionElapsed >= r.randElectionTimeout {
@@ -621,7 +642,7 @@ func (r *Raft) stepLeader(m pb.Message) {
 			}
 		}
 	case pb.MessageType_MsgPropose:
-		ToCPrint("[Propose] id: %d, term: %d, log Len %v, last Index %v", r.id, r.Term, len(r.RaftLog.entries), r.RaftLog.LastIndex())
+		//ToCPrint("[Propose] id: %d, term: %d, log Len %v, last Index %v", r.id, r.Term, len(r.RaftLog.entries), r.RaftLog.LastIndex())
 		// 提交entry,先给leader，再发给所有的
 		// 当前leader在转换？
 		// 先给自己添加entries
@@ -680,6 +701,10 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		} else {
 			progress.Next = matchindex + 1
 			progress.Match = matchindex
+			if _, ok := r.SendSnapShot[m.From]; ok {
+				ToCPrint("[receive response] delete sendSnapshot %v", m.From)
+				delete(r.SendSnapShot, m.From)
+			}
 		}
 		r.updateCommit()
 	}

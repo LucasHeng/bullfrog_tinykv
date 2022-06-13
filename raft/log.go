@@ -91,7 +91,7 @@ func (l *RaftLog) maybeCompact() {
 	index, _ := l.storage.FirstIndex()
 	// 如果 first index > snapIndex,说明在这段时间又截断了某些日志，因此需要同步更新内存中的状态
 	if index > l.snapIndex {
-		fmt.Println("----------", l.snapIndex, "----", index-l.snapIndex, len(l.entries))
+		//fmt.Println("----------", l.snapIndex, "----", index-l.snapIndex, len(l.entries))
 		if len(l.entries) > 0 {
 			// 酱紫更省空间
 			entries := l.entries[index-l.snapIndex:]
