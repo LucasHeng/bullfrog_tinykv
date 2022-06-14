@@ -156,7 +156,7 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 	if i > lastindex {
 		return 0, fmt.Errorf("index out of range")
 	}
-	if i > l.stabled {
+	if i > l.stabled && len(l.entries) > 0 {
 		return l.entries[i-l.entries[0].Index].Term, nil
 	}
 	term, err := l.storage.Term(i)
@@ -227,6 +227,7 @@ func (l *RaftLog) commitTo(commit uint64) {
 			return
 		}
 		l.committed = commit
+		ToCPrint("[commitTo] commit to %v", commit)
 	}
 }
 

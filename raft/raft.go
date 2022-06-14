@@ -846,7 +846,7 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 func (r *Raft) handleSnapshot(m pb.Message) {
 	// Your Code Here (2C).
 	// reply immediately if m.Term < currentTerm
-	ToCPrint("[handleSnapshot] %d receive snapshot from %v, snapshot:%v", r.id, m.From, m.Snapshot)
+	ToCPrint("[handleSnapshot] %d receive snapshot from %v, snapshot:%v, committed:%v, lastIndex: %v", r.id, m.From, m.Snapshot, r.RaftLog.committed, r.RaftLog.LastIndex())
 	if m.Term < r.Term {
 		ToCPrint("[handleSnapshot] m.Term %v < r.Term %v , return", m.Term, r.Term)
 		r.sendSnapResp(m.From)
@@ -854,7 +854,7 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 	}
 	// 如果 m.Index 小于等于 r.RaftLog.committed，说明是个旧快照，直接返回
 	if m.Snapshot.Metadata.Index <= r.RaftLog.committed {
-		ToCPrint("[handleSnapshot] m.Snapshot.Metadata.Index %v <= r.RaftLog.committed %v , return", m.Index, r.RaftLog.committed)
+		ToCPrint("[handleSnapshot] m.Snapshot.Metadata.Index %v <= r.RaftLog.committed %v , return", m.Snapshot.Metadata.Index, r.RaftLog.committed)
 		r.sendSnapResp(m.From)
 		return
 	}
@@ -907,6 +907,7 @@ func (r *Raft) removeNode(id uint64) {
 // 加载原先的HardState
 func (r *Raft) loadState(hs pb.HardState) bool {
 	if hs.Commit < r.RaftLog.committed || hs.Commit > r.RaftLog.LastIndex() {
+		fmt.Println("---------", hs.Commit, r.RaftLog.committed)
 		return false
 	}
 	r.RaftLog.committed = hs.Commit
