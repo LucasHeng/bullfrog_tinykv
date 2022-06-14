@@ -120,6 +120,7 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 						// 没有proposal,结束这个
 						return
 					}
+					proposal = d.proposals[0]
 				}
 				if proposal.index == e.Index {
 					if proposal.term != e.Term {

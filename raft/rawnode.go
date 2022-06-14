@@ -178,6 +178,7 @@ func (rn *RawNode) Ready() Ready {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
 	}
+	PrintEntry(rd.CommittedEntries, rn.Raft.id)
 	// 是否有新的消息
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs

@@ -19,6 +19,7 @@ import (
 	"math/rand"
 
 	pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
+	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 )
 
 // None is a placeholder node ID used when there is no leader.
@@ -166,7 +167,9 @@ type Raft struct {
 func newRaft(c *Config) *Raft {
 	// Your Code Here (2A).
 	// 可能是机器重启？
-	DPrintf("config:%v", c)
+	if flag == "election" {
+		DPrintf("config:%v", c)
+	}
 	if err := c.validate(); err != nil {
 		panic(err)
 	}
@@ -244,7 +247,8 @@ func (r *Raft) sendHeartbeat(to uint64) {
 	if flag == "copy" || flag == "all" {
 		DPrintf("{Node: %d} send heartbeat to {Node: %d} m.committed: %d", r.id, to, r.RaftLog.committed)
 	}
-	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeat, To: to, From: r.id, Term: r.Term, Commit: r.RaftLog.committed}
+	commit := min(r.RaftLog.committed, r.Prs[to].Match)
+	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeat, To: to, From: r.id, Term: r.Term, Commit: commit}
 	r.msgs = append(r.msgs, msg)
 }
 
@@ -369,7 +373,7 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 	for i := range ents {
 		ents[i].Term = r.Term
 		ents[i].Index = lastindex + 1 + uint64(i)
-		DPrintf("%v %v %v", r.Prs, r.Prs[r.id], ents[i])
+		// DPrintf("%v %v %v", r.Prs, r.Prs[r.id], ents[i])
 		r.Prs[r.id].Match = ents[i].Index
 		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
 	}
@@ -582,6 +586,8 @@ func (r *Raft) stepLeader(m pb.Message) {
 		// 当前leader在转换？
 		// 先给自己添加entries
 		// 再给所有的peer发送
+
+		r.printMessage(m, "HandlePropose")
 		r.AppendEntries(m.Entries...)
 		r.broadcastAppend()
 	case pb.MessageType_MsgAppend:
@@ -608,6 +614,8 @@ func (r *Raft) stepLeader(m pb.Message) {
 // 处理appendResponse
 func (r *Raft) handleAppendResponse(m pb.Message) {
 	// 收到消息
+	r.printMessage(m, "HandleAppendResponse")
+
 	if flag == "copy" || flag == "all" {
 		DPrintf("{Node: %d} receive appeendresp from {peer %d} in {term : %d}with {state: %v}", r.id, m.From, m.Term, r.State.String())
 	}
@@ -660,12 +668,31 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 	}
 }
 
+type Printmsg struct {
+	Term  uint64
+	Index uint64
+	Msg   *raft_cmdpb.RaftCmdRequest
+}
+
+func (r *Raft) printMessage(m pb.Message, head string) {
+	msgs := make([]Printmsg, 0)
+	if len(m.Entries) != 0 {
+		for _, e := range m.Entries {
+			cmd := &raft_cmdpb.RaftCmdRequest{}
+			cmd.Unmarshal(e.Data)
+			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: cmd})
+		}
+	}
+	To2B("%s:{Node %d} recieve from Node:%d {msg:%v Term: %d; logTerm: %d Index:%d Entries:%v Commit:%d} in {term : %d} with {state: %v}", head, r.id, m.From, m.MsgType, m.Term, m.LogTerm, m.Index, msgs, m.Commit, r.Term, r.State.String())
+
+}
+
 // handleAppendEntries handle AppendEntries RPC request
 func (r *Raft) handleAppendEntries(m pb.Message) {
 	// Your Code Here (2A).
 	// 收到了append请求
 	// DPrintf("line 581 {Node: %d in term:%d } send {Node: %d in term: %d state: %v} %v,%v,%v", m.From, m.Term, m.To, r.Term, r.State.String(), m.Index, m.LogTerm, r.isLogmatch(m.Index, m.LogTerm))
-
+	r.printMessage(m, "HandleAppendEntries")
 	if r.Term > m.Term {
 		// 如果term比leader大，则拒绝
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
@@ -679,19 +706,20 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	// 修改lead为m.From
 	r.becomeFollower(m.Term, m.From)
 
+	// 新leader的Index小于老leader的index，是因为分区原因
 	// 如果发送的message的消息早于commit，则这个消息应该拒绝，因为commit的entry不应该修改
 	// 回复的Index应该是已经匹配的Index
-	if m.Index < r.RaftLog.committed {
-		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
-		msg.Index = r.RaftLog.committed
-		msg.LogTerm = None
-		r.msgs = append(r.msgs, msg)
-		if flag == "copy" || flag == "all" {
-			DPrintf("{Node %d} send {AppendResp: Term: %d,LogTerm: %d,Index: %d Reject: %v} to {peer: %d} in {term : %d} with {state: %v}", r.id, msg.Term, msg.LogTerm, msg.Index, msg.Reject, m.From, m.Term, r.State.String())
-		}
-		return
-	}
-	DPrintf("{Node: %d in term:%d} send {Node: %d in term: %d} %v,%v,%v", m.From, m.Term, m.To, r.Term, m.Index, m.LogTerm, m.Entries)
+	// if m.Index < r.RaftLog.committed {
+	// 	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
+	// 	msg.Index = r.RaftLog.committed
+	// 	msg.LogTerm = None
+	// 	r.msgs = append(r.msgs, msg)
+	// 	if flag == "copy" || flag == "all" {
+	// 		DPrintf("{Node %d} send {AppendResp: Term: %d,LogTerm: %d,Index: %d Reject: %v} to {peer: %d} in {term : %d} with {state: %v}", r.id, msg.Term, msg.LogTerm, msg.Index, msg.Reject, m.From, m.Term, r.State.String())
+	// 	}
+	// 	return
+	// }
+	// DPrintf("{Node: %d in term:%d} send {Node: %d in term: %d} %v,%v,%v", m.From, m.Term, m.To, r.Term, m.Index, m.LogTerm, m.Entries)
 	if !r.isLogmatch(m.Index, m.LogTerm) {
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
 		hintindex := min(m.Index, r.RaftLog.LastIndex())
@@ -763,6 +791,7 @@ func (l *RaftLog) findConflictbyterm(index uint64, term uint64) (uint64, uint64)
 // handleHeartbeat handle Heartbeat RPC request
 func (r *Raft) handleHeartbeat(m pb.Message) {
 	// Your Code Here (2A).
+	r.printMessage(m, "handleheartbeat")
 	if r.Term > m.Term {
 		logTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
 		msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term, Index: r.RaftLog.LastIndex(), LogTerm: logTerm}
