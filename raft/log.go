@@ -222,13 +222,14 @@ func (l *RaftLog) AppendEntries(ents ...*pb.Entry) {
 }
 
 func (l *RaftLog) commitTo(commit uint64) {
-	if l.committed < commit {
-		if commit > l.LastIndex() {
-			return
-		}
-		l.committed = commit
-		ToCPrint("[commitTo] commit to %v", commit)
+	if l.committed >= commit {
+		return
 	}
+	if commit > l.LastIndex() {
+		return
+	}
+	l.committed = commit
+	ToCPrint("[commitTo] commit to %v", commit)
 }
 
 // 某个index之后，是否还有已经 commit 的 entries
