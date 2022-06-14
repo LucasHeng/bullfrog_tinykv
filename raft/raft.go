@@ -434,6 +434,7 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 		ents[i].Term = r.Term
 		ents[i].Index = lastindex + 1 + uint64(i)
 		if ents[i].EntryType == pb.EntryType_EntryConfChange {
+			// 限制一次只能提出一个 confChange
 			if r.PendingConfIndex != None {
 				continue
 			}
@@ -740,7 +741,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 				ToCPrint("[receive response] delete sendSnapshot %v", m.From)
 				delete(r.SendSnapShot, m.From)
 			}
-			if r.leadTransferee != 0 {
+			if r.leadTransferee == m.From {
 				r.updateCommit()
 				r.sendTimeOutNow(m.From)
 				return
