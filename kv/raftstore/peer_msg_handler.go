@@ -279,14 +279,17 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		if err != nil {
 			log.Fatal("marshal error:", err)
 		}
-		proposal := &proposal{
-			index: d.nextProposalIndex(),
-			term:  d.Term(),
-			cb:    cb,
+		for i := 0; i < len(msg.Requests); i++ {
+			// 针对每个请求都建立一个propose
+			proposal := &proposal{
+				index: d.nextProposalIndex(),
+				term:  d.Term(),
+				cb:    cb,
+			}
+			d.proposals = append(d.proposals, proposal)
+			//fmt.Println(msg.Requests, "propose", len(d.proposals))
+			d.RaftGroup.Propose(reqMsg)
 		}
-		d.proposals = append(d.proposals, proposal)
-		//fmt.Println(msg.Requests, "propose", len(d.proposals))
-		d.RaftGroup.Propose(reqMsg)
 	} else {
 		//kvWb := &engine_util.WriteBatch{}
 		switch msg.AdminRequest.CmdType {
