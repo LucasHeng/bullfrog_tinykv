@@ -5,6 +5,7 @@ import "log"
 // Debugging
 const Debug = false
 const flag = "Debug2B"
+const Flag3B = " "
 
 var ToB = false
 var ToC = false

@@ -693,14 +693,18 @@ func (r *Raft) stepLeader(m pb.Message) {
 
 // 处理 leader transfer
 func (r *Raft) handleTransferLeader(m pb.Message) {
-	To3APrint("[Handle Leader Transfer] %v request %v to transfer", m.From, r.id)
+	if Flag3B == "transfer leader" {
+		To3APrint("[Handle Leader Transfer] %v request %v to transfer,state %v", m.From, r.id, r.State)
+	}
 	// 如果是要求转移给自己，就直接返回
 	if m.From == r.id {
 		return
 	}
 	// 检查是否存在集群中
 	if _, ok := r.Prs[m.From]; !ok {
-		To3APrint("[Handle Leader Transfer] %v don't exist in the cluster,return", m.From)
+		if Flag3B == "transfer leader" {
+			To3APrint("[Handle Leader Transfer] %v don't exist in the cluster,return", m.From)
+		}
 		return
 	}
 	r.leadTransferee = m.From
@@ -752,7 +756,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 }
 
 func (r *Raft) sendTimeOutNow(to uint64) {
-	To3APrint("[Time Out Now] %v let %v hup now", r.id, to)
+	//To3APrint("[Time Out Now] %v let %v hup now", r.id, to)
 	msg := pb.Message{
 		From:    r.id,
 		To:      to,
@@ -811,9 +815,9 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 		lastindex := m.Index + uint64(len(m.Entries))
 		r.RaftLog.committed = min(lastindex, m.Commit)
 	}
-	if m.Index < r.RaftLog.applied {
-		r.RaftLog.applied = m.Index
-	}
+	//if m.Index < r.RaftLog.applied {
+	//	r.RaftLog.applied = m.Index
+	//}
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
 	if ToB {
 		ToBPrint("[%v %v handleAppendEntries] success, now lastIndex:%v,actual len:%v, committed:%v, apply:%v", r.State, r.id, r.RaftLog.LastIndex(), len(r.RaftLog.entries), r.RaftLog.committed, r.RaftLog.applied)

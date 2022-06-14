@@ -530,7 +530,6 @@ func TestTransferLeader3B(t *testing.T) {
 	cluster := NewTestCluster(5, cfg)
 	cluster.Start()
 	defer cluster.Shutdown()
-
 	regionID := cluster.GetRegion([]byte("")).GetId()
 	cluster.MustTransferLeader(regionID, NewPeer(1, 1))
 	cluster.MustTransferLeader(regionID, NewPeer(2, 2))
