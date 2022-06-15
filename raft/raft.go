@@ -490,12 +490,13 @@ func (r *Raft) stepFollower(m pb.Message) {
 	case pb.MessageType_MsgHup:
 		r.hup()
 	case pb.MessageType_MsgPropose:
-		if r.Lead != None {
-			// 如果有别的主，那么转发
-			m.To = r.Lead
-			m.From = r.id
-			r.msgs = append(r.msgs, m)
-		}
+		//if r.Lead != None {
+		//	// 如果有别的主，那么转发
+		//	m.To = r.Lead
+		//	m.From = r.id
+		//	r.msgs = append(r.msgs, m)
+		//}
+		return
 	case pb.MessageType_MsgAppend:
 		r.handleAppendEntries(m)
 	case pb.MessageType_MsgRequestVote:
