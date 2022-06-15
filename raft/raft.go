@@ -815,9 +815,10 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 		lastindex := m.Index + uint64(len(m.Entries))
 		r.RaftLog.committed = min(lastindex, m.Commit)
 	}
-	//if m.Index < r.RaftLog.applied {
-	//	r.RaftLog.applied = m.Index
-	//}
+	if m.Index < r.RaftLog.applied {
+		fmt.Println("have to fix apply")
+		r.RaftLog.applied = m.Index
+	}
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
 	if ToB {
 		ToBPrint("[%v %v handleAppendEntries] success, now lastIndex:%v,actual len:%v, committed:%v, apply:%v", r.State, r.id, r.RaftLog.LastIndex(), len(r.RaftLog.entries), r.RaftLog.committed, r.RaftLog.applied)
