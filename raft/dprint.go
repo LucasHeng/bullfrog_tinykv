@@ -9,7 +9,7 @@ import (
 
 // Debugging
 const Debug = true
-const flag = "xx"
+const flag = "2B"
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug {

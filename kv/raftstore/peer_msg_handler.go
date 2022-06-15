@@ -78,16 +78,17 @@ func (d *peerMsgHandler) HandleRaftReady() {
 }
 
 func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) {
-	kvWB := &engine_util.WriteBatch{}
+
 	for _, e := range committedEntries {
+		kvWB := &engine_util.WriteBatch{}
 		d.HandleEntry(&e, kvWB)
 		if d.stopped {
 			return
 		}
+		d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
+		kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+		kvWB.WriteToDB(d.peerStorage.Engines.Kv)
 	}
-	d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
-	kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-	kvWB.WriteToDB(d.peerStorage.Engines.Kv)
 }
 
 func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
@@ -110,7 +111,7 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			}
 
 			// 回复
-			if len(d.proposals) != 0 && d.IsLeader() {
+			if len(d.proposals) != 0 {
 				proposal := d.proposals[0]
 				// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
 				for proposal.index < e.Index {

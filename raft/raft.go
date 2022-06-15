@@ -598,6 +598,10 @@ func (r *Raft) stepLeader(m pb.Message) {
 	case pb.MessageType_MsgRequestVote:
 		r.handleRequestVote(m)
 	case pb.MessageType_MsgRequestVoteResponse:
+	case pb.MessageType_MsgHeartbeat:
+		// leader也会收到heartbeat,处理一下，提前达成单主共识
+		// 两个主不会是同一个term的
+		r.handleHeartbeat(m)
 	case pb.MessageType_MsgHeartbeatResponse:
 		if m.Term > r.Term {
 			r.becomeFollower(m.Term, None)
@@ -683,7 +687,7 @@ func (r *Raft) printMessage(m pb.Message, head string) {
 			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: cmd})
 		}
 	}
-	To2B("%s:{Node %d} recieve from Node:%d {msg:%v Term: %d; logTerm: %d Index:%d Entries:%v Commit:%d} in {term : %d} with {state: %v}", head, r.id, m.From, m.MsgType, m.Term, m.LogTerm, m.Index, msgs, m.Commit, r.Term, r.State.String())
+	To2B("%s:{Node %d} recieve from Node:%d {msg:%v Term: %d; logTerm: %d Index:%d Entries:%v Commit:%d Reject:%v} in {term : %d} with {state: %v}", head, r.id, m.From, m.MsgType, m.Term, m.LogTerm, m.Index, msgs, m.Commit, m.Reject, r.Term, r.State.String())
 
 }
 
