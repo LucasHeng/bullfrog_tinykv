@@ -60,7 +60,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	}
 	// 判断 region是否一样，否则就要更换 region
 	if res != nil && !reflect.DeepEqual(res.PrevRegion, res.Region) {
-		d.SetRegion(res.Region)
+		d.peerStorage.SetRegion(res.Region)
 		metaStore := d.ctx.storeMeta
 		metaStore.Lock()
 		metaStore.regions[res.Region.Id] = res.Region
@@ -77,18 +77,8 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		//fmt.Println(rd.CommittedEntries)
 		logWb := &engine_util.WriteBatch{}
 		for _, ent := range rd.CommittedEntries {
-			msg := &raft_cmdpb.RaftCmdRequest{}
-			err := msg.Unmarshal(ent.Data)
-			if err != nil {
-				log.Fatal("msg unmarshal error:", err)
-			}
-			if len(msg.Requests) > 0 {
-				logWb = d.handleRequests(msg.Requests, &ent, logWb)
-			}
-			// 处理像 compact .... 这些的 admin request，然后一起批量写入
-			if msg.AdminRequest != nil {
-				logWb = d.handleAdminRequests(msg.AdminRequest, logWb)
-			}
+			logWb = d.handleEntry(ent, logWb)
+			// 这个是必须要的，因为停止了就应该直接return，特别是在删除节点的时候，否则就会出错
 			if d.stopped {
 				return
 			}
@@ -99,6 +89,146 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		//fmt.Println(rd.CommittedEntries)
 	}
 	d.RaftGroup.Advance(rd)
+}
+
+func (d *peerMsgHandler) handleEntry(ent eraftpb.Entry, logWb *engine_util.WriteBatch) *engine_util.WriteBatch {
+	if ent.EntryType == eraftpb.EntryType_EntryConfChange {
+		c := &eraftpb.ConfChange{}
+		err := c.Unmarshal(ent.Data)
+		if err != nil {
+			panic(err)
+		}
+		logWb = d.handleConfChange(c, ent, logWb)
+		return logWb
+	}
+	msg := &raft_cmdpb.RaftCmdRequest{}
+	err := msg.Unmarshal(ent.Data)
+	if err != nil {
+		log.Fatal("msg unmarshal error:", err)
+	}
+	if len(msg.Requests) > 0 {
+		logWb = d.handleRequests(msg.Requests, &ent, logWb)
+	}
+	// 处理像 compact .... 这些的 admin request，然后一起批量写入
+	if msg.AdminRequest != nil {
+		logWb = d.handleAdminRequests(msg.AdminRequest, logWb)
+	}
+	return logWb
+}
+
+func (d *peerMsgHandler) handleConfChange(c *eraftpb.ConfChange, ent eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
+	// 在日志被提交后，改变 RegionLocalState，包括 RegionEpoch 和 Region 中的Peers
+	msg := &raft_cmdpb.RaftCmdRequest{}
+	if err := msg.Unmarshal(c.Context); err != nil {
+		panic(err)
+	}
+	region := d.Region()
+	if err := util.CheckRegionEpoch(msg, region, true); err != nil {
+		if error, ok := err.(*util.ErrEpochNotMatch); ok {
+			if len(d.proposals) > 0 {
+				proposal := d.proposals[0]
+				if proposal.index == ent.Index {
+					if proposal.term != ent.Term {
+						NotifyStaleReq(ent.Term, proposal.cb)
+					} else {
+						proposal.cb.Done(ErrResp(error))
+					}
+				}
+				d.proposals = d.proposals[1:]
+			}
+		} else {
+			// todo : need to do?
+			raft.To3BPrint("[handleConfChange] unknown error, how to deal? err : %v", error)
+		}
+		return wb
+	}
+	// 找到这个要删除/添加的节点是否在region中
+	peer := -1
+	for i, p := range region.Peers {
+		if p.Id == c.NodeId {
+			peer = i
+		}
+	}
+	// 删除/添加
+	switch c.ChangeType {
+	case eraftpb.ConfChangeType_RemoveNode:
+		// 对于执行 RemoveNode，你应该明确地调用 destroyPeer() 来停止 Raft 模块。销毁逻辑是为你提供的
+		// 如果要删除的是自己，就直接销毁就行了
+		if d.Meta.Id == c.NodeId {
+			raft.To3BPrint("[ConfChangeType_RemoveNode] %v", d.RaftGroup.Raft.RaftLog.LastIndex())
+			// 考虑一种情况就是只剩下两个peer，且删除的是leader，这个时候应该怎么去处理呢
+			if len(region.Peers) == 2 && d.IsLeader() {
+				var to uint64
+				for _, p := range region.Peers {
+					if p.Id != c.NodeId {
+						to = p.Id
+					}
+				}
+				if to != 0 {
+					d.RaftGroup.TransferLeader(to)
+				}
+				raft.To3BPrint("[handleConfChange] just 2 nodes, and i am leader")
+				// 等待 transfer success
+				time.Sleep(50 * time.Millisecond)
+			}
+			d.destroyPeer()
+			return wb
+		}
+		// 如果要删除的不是自己且在region中，就清除相关信息
+		if peer != -1 {
+			// 清除peer
+			region.Peers = append(region.Peers[:peer], region.Peers[peer+1:]...)
+			// RegionEpoch 的 conf_ver 在 ConfChange 期间增加
+			region.RegionEpoch.ConfVer++
+			meta.WriteRegionState(wb, region, rspb.PeerState_Normal)
+			// 更新 storeMeta
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			storeMeta.regions[region.Id] = region
+			storeMeta.Unlock()
+			// 删除 peer Cache对应信息
+			d.removePeerCache(c.NodeId)
+			raft.To3BPrint("[handleConfChange] %v remove the peer %v", d.Tag, c.NodeId)
+		}
+	case eraftpb.ConfChangeType_AddNode:
+		// 不需要调用createPeer() 或者 maybeCreatePeer()，只需要修改 storeMeta就行，创建由心跳来执行
+		if peer == -1 {
+			p := msg.AdminRequest.ChangePeer.Peer
+			region.Peers = append(region.Peers, p)
+			region.RegionEpoch.ConfVer += 1
+			meta.WriteRegionState(wb, region, rspb.PeerState_Normal)
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			storeMeta.regions[region.Id] = region
+			storeMeta.Unlock()
+			d.insertPeerCache(p)
+			raft.To3BPrint("[handleConfChange] %v add the peer %v", d.Tag, c.NodeId)
+		}
+	}
+	// apply conf change
+	d.RaftGroup.ApplyConfChange(*c)
+	if len(d.proposals) > 0 {
+		proposal := d.proposals[0]
+		if proposal.index == ent.Index {
+			if proposal.term != ent.Term {
+				NotifyStaleReq(ent.Term, proposal.cb)
+			} else {
+				proposal.cb.Done(&raft_cmdpb.RaftCmdResponse{
+					Header: &raft_cmdpb.RaftResponseHeader{},
+					AdminResponse: &raft_cmdpb.AdminResponse{
+						CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
+						ChangePeer: &raft_cmdpb.ChangePeerResponse{Region: region},
+					},
+				})
+			}
+		}
+		d.proposals = d.proposals[1:]
+	}
+	// if leader, heartbeat and create the new peer
+	if d.IsLeader() {
+		d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
+	}
+	return wb
 }
 
 func (d *peerMsgHandler) handleAdminRequests(req *raft_cmdpb.AdminRequest, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
@@ -320,6 +450,27 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 					CmdType:        raft_cmdpb.AdminCmdType_TransferLeader,
 					TransferLeader: &raft_cmdpb.TransferLeaderResponse{},
 				},
+			})
+		case raft_cmdpb.AdminCmdType_ChangePeer:
+			// 单步变更：如果 pendingIndex > applyIndex,就直接返回，因为当前还有未完成的 conf change
+			// 测试代码会多次安排一个 conf change 的命令，直到该 conf change 被应用，所以你需要考虑如何忽略同一 conf change 的重复命令
+			if d.RaftGroup.Raft.PendingConfIndex > d.peerStorage.AppliedIndex() {
+				return
+			}
+			proposal := &proposal{
+				index: d.nextProposalIndex(),
+				term:  d.Term(),
+				cb:    cb,
+			}
+			d.proposals = append(d.proposals, proposal)
+			data, err := msg.Marshal()
+			if err != nil {
+				panic(err)
+			}
+			d.RaftGroup.ProposeConfChange(eraftpb.ConfChange{
+				ChangeType: msg.AdminRequest.ChangePeer.ChangeType,
+				NodeId:     msg.AdminRequest.ChangePeer.Peer.Id,
+				Context:    data,
 			})
 		}
 	}

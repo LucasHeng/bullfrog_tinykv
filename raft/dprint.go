@@ -9,7 +9,8 @@ const Flag3B = " "
 
 var ToB = false
 var ToC = false
-var To3A = true
+var To3A = false
+var To3B = true
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug {
@@ -32,6 +33,12 @@ func ToCPrint(format string, a ...interface{}) {
 
 func To3APrint(format string, a ...interface{}) {
 	if To3A == true {
+		log.Printf(format, a...)
+	}
+}
+
+func To3BPrint(format string, a ...interface{}) {
+	if To3B == true {
 		log.Printf(format, a...)
 	}
 }

@@ -289,7 +289,7 @@ func (r *Raft) sendHeartbeat(to uint64) {
 	if flag == "copy" || flag == "all" {
 		DPrintf("{Node: %d} send heartbeat to {Node: %d} m.committed: %d", r.id, to, r.RaftLog.committed)
 	}
-	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeat, To: to, From: r.id, Term: r.Term, Commit: r.RaftLog.committed}
+	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeat, To: to, From: r.id, Term: r.Term, Commit: min(r.RaftLog.committed, r.Prs[to].Match)}
 	r.msgs = append(r.msgs, msg)
 }
 
@@ -440,8 +440,15 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 			}
 			r.PendingConfIndex = ents[i].Index
 		}
-		r.Prs[r.id].Match = ents[i].Index
-		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		if _, ok := r.Prs[r.id]; ok {
+			r.Prs[r.id].Match = ents[i].Index
+			r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		} else {
+			r.Prs[r.id] = &Progress{
+				Match: ents[i].Index,
+				Next:  ents[i].Index + 1,
+			}
+		}
 	}
 	r.RaftLog.AppendEntries(ents...)
 
@@ -897,6 +904,7 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 		r.RaftLog.commitTo(min(m.Commit, r.RaftLog.LastIndex()))
 	}
 	logTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
+	To3BPrint("[handleHeartbeat] %v handle hb, commit:%v, apply: %v, lastIndex: %v", r.id, r.RaftLog.committed, r.RaftLog.applied, r.RaftLog.LastIndex())
 	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term, Index: r.RaftLog.LastIndex(), LogTerm: logTerm}
 	r.msgs = append(r.msgs, msg)
 }

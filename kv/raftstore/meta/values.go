@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"fmt"
 	"github.com/Connor1996/badger"
 	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
@@ -55,6 +56,7 @@ func InitRaftLocalState(raftEngine *badger.DB, region *metapb.Region) (*rspb.Raf
 	if err == badger.ErrKeyNotFound {
 		raftState = new(rspb.RaftLocalState)
 		raftState.HardState = new(eraftpb.HardState)
+		fmt.Println("come:", len(region.Peers))
 		if len(region.Peers) > 0 {
 			// new split region
 			raftState.LastIndex = RaftInitLogIndex
@@ -67,6 +69,7 @@ func InitRaftLocalState(raftEngine *badger.DB, region *metapb.Region) (*rspb.Raf
 			}
 		}
 	}
+	fmt.Println("cao:", raftState, err)
 	return raftState, nil
 }
 
