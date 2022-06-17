@@ -158,13 +158,13 @@ func (rn *RawNode) Ready() Ready {
 	if !compareSS(ss, rn.prevSS) {
 		rd.SoftState = &ss
 	}
-	// hs是否有更新
+	// hs是否有更新,hs也不能为空
 	hs := rn.Raft.hardState()
-	if !compareHs(hs, rn.prevHs) {
+	if !isEmtpyHardState(hs) && !compareHs(hs, rn.prevHs) {
 		rd.HardState = hs
 	}
 	// 是否有还未stable的entry
-	if len(rn.Raft.RaftLog.entries) != 0 {
+	if len(rn.Raft.RaftLog.unstableEntries()) != 0 {
 		// 找到未stabled的entries
 		rd.Entries = rn.Raft.RaftLog.unstableEntries()
 		if flag == "copy" || flag == "all" {
@@ -172,13 +172,13 @@ func (rn *RawNode) Ready() Ready {
 		}
 	}
 	// 是否还有commit但是还未apply的entries
-	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
+	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
 		rd.CommittedEntries = rn.Raft.RaftLog.nextEnts()
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
 	}
-	PrintEntry(rd.CommittedEntries, rn.Raft.id)
+	PrintReady(rd, rn.Raft.id)
 	// 是否有新的消息
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
@@ -190,6 +190,10 @@ func (rn *RawNode) Ready() Ready {
 // hardstate比较
 func compareHs(l pb.HardState, r pb.HardState) bool {
 	return l.Term == r.Term && l.Vote == r.Vote && l.Commit == r.Commit
+}
+
+func isEmtpyHardState(r pb.HardState) bool {
+	return compareHs(r, pb.HardState{})
 }
 
 // HasReady called when RawNode user need to check if any Ready pending.
@@ -208,7 +212,7 @@ func (rn *RawNode) HasReady() bool {
 	if rn.Raft.softState() != rn.prevSS {
 		return true
 	}
-	if !compareHs(rn.Raft.hardState(), rn.prevHs) {
+	if !isEmtpyHardState(rn.Raft.hardState()) && !compareHs(rn.Raft.hardState(), rn.prevHs) {
 		return true
 	}
 	// 有未持久的entries
@@ -216,7 +220,7 @@ func (rn *RawNode) HasReady() bool {
 		return true
 	}
 	// 有未应用的commit entry
-	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
+	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
 		return true
 	}
 	return false

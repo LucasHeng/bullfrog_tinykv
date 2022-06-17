@@ -51,7 +51,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 
 	rd := d.RaftGroup.Ready()
 
-	// 处理ready
+	// 处理ready,保存未持久的log然后应用commit
 	_, err := d.peerStorage.SaveReadyState(&rd)
 
 	if err != nil {
@@ -70,25 +70,30 @@ func (d *peerMsgHandler) HandleRaftReady() {
 
 	// 处理committed entries
 	if len(rd.CommittedEntries) != 0 {
-		d.HandleCommittedEntries(rd.CommittedEntries)
+		err := d.HandleCommittedEntries(rd.CommittedEntries)
+		if err != nil {
+			panic(err)
+		}
 	}
+
+	// log.Infof("Node:%d Ready apply successfully raftstate:%v and applystate:%v", d.PeerId(), d.peerStorage.raftState, d.peerStorage.applyState)
 
 	d.RaftGroup.Advance(rd)
 	// Your Code Here (2B).
 }
 
-func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) {
-
+func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) error {
+	kvWB := &engine_util.WriteBatch{}
 	for _, e := range committedEntries {
-		kvWB := &engine_util.WriteBatch{}
 		d.HandleEntry(&e, kvWB)
-		if d.stopped {
-			return
-		}
-		d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
-		kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-		kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+		// if d.stopped {
+		// 	return
+		// }
 	}
+	d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
+	kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+	err := kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+	return err
 }
 
 func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
@@ -136,6 +141,10 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 					case raft_cmdpb.CmdType_Invalid:
 					case raft_cmdpb.CmdType_Get:
 						// get应该返回当前值
+						d.peerStorage.applyState.AppliedIndex = e.Index
+						kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+						kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+						kvWB.Reset()
 						val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
 						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Get, Get: &raft_cmdpb.GetResponse{
 							Value: val,
@@ -145,6 +154,10 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 					case raft_cmdpb.CmdType_Delete:
 						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Delete, Delete: &raft_cmdpb.DeleteResponse{}}}
 					case raft_cmdpb.CmdType_Snap:
+						d.peerStorage.applyState.AppliedIndex = e.Index
+						kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+						kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+						kvWB.Reset()
 						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
 						proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
 					}

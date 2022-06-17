@@ -376,8 +376,14 @@ func (ps *PeerStorage) SaveReadyState(ready *raft.Ready) (*ApplySnapResult, erro
 	}
 
 	// 写入raftstate
-	raftWB.SetMeta(meta.RaftStateKey(ps.region.GetId()), ps.raftState)
-	raftWB.WriteToDB(ps.Engines.Raft)
+	err := raftWB.SetMeta(meta.RaftStateKey(ps.region.GetId()), ps.raftState)
+	if err != nil {
+		return nil, err
+	}
+	err = raftWB.WriteToDB(ps.Engines.Raft)
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, nil
 }

@@ -70,11 +70,10 @@ func newLog(storage Storage) *RaftLog {
 	if err != nil {
 		lastindex = 0
 	}
-	hardState, _, _ := storage.InitialState()
 	entries, _ := storage.Entries(firstIndex, lastindex+1)
 	return &RaftLog{
 		storage:         storage,
-		committed:       hardState.Commit,
+		committed:       firstIndex - 1,
 		applied:         firstIndex - 1,
 		stabled:         lastindex,
 		entries:         entries,
@@ -93,6 +92,7 @@ func (l *RaftLog) maybeCompact() {
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
 	// 若stabled在中
+	// 截掉
 	if len(l.entries) != 0 && l.stabled >= l.entries[0].Index {
 		l.entries = l.entries[l.stabled+1-l.entries[0].Index:]
 	}
@@ -140,12 +140,12 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 	return l.storage.Term(i)
 }
 
-func (l *RaftLog) appliedTo(i uint64) {
+func (l *RaftLog) appliedTo(i uint64, id uint64) {
 	if i == 0 {
 		return
 	}
 	if l.committed < i || i < l.applied {
-		log.Fatal(fmt.Sprintf("applied(%d) is out of range [prevApplied(%d), committed(%d)]", i, l.applied, l.committed))
+		log.Fatal(fmt.Sprintf("Node:%d applied(%d) is out of range [prevApplied(%d), committed(%d)]", id, i, l.applied, l.committed))
 	}
 	l.applied = i
 }
