@@ -152,7 +152,7 @@ func (rn *RawNode) Step(m pb.Message) error {
 // Ready returns the current point-in-time state of this RawNode.
 func (rn *RawNode) Ready() Ready {
 	// Your Code Here (2A).
-	rd := Ready{}
+	rd := Ready{Entries: []pb.Entry{}, CommittedEntries: []pb.Entry{}}
 	// ss是否有更新
 	ss := rn.Raft.softState()
 	if !compareSS(ss, rn.prevSS) {
@@ -166,14 +166,14 @@ func (rn *RawNode) Ready() Ready {
 	// 是否有还未stable的entry
 	if len(rn.Raft.RaftLog.unstableEntries()) != 0 {
 		// 找到未stabled的entries
-		rd.Entries = rn.Raft.RaftLog.unstableEntries()
+		rd.Entries = append(rd.Entries, rn.Raft.RaftLog.unstableEntries()...)
 		if flag == "copy" || flag == "all" {
 			DPrintf("entries: %v", rd.Entries)
 		}
 	}
 	// 是否还有commit但是还未apply的entries
 	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
-		rd.CommittedEntries = rn.Raft.RaftLog.nextEnts()
+		rd.CommittedEntries = append(rd.CommittedEntries, rn.Raft.RaftLog.nextEnts()...)
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
