@@ -106,10 +106,24 @@ func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	return ents
 }
 
+func (l *RaftLog) FirstIndex() uint64 {
+	if l.pendingSnapshot != nil {
+		return l.pendingSnapshot.Metadata.Index + 1
+	}
+	index, err := l.storage.FirstIndex()
+	if err != nil {
+		panic(err)
+	}
+	return index
+}
+
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
 	if len(l.entries) == 0 {
+		if l.pendingSnapshot != nil {
+			return l.pendingSnapshot.Metadata.Index
+		}
 		lastindex, _ := l.storage.LastIndex()
 		return lastindex
 	}
@@ -130,14 +144,25 @@ func (l *RaftLog) isUpToDate(index uint64, term uint64) bool {
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
 	// 有未persist的snapshot
+	dummyindex := l.FirstIndex() - 1
 	lastindex := l.LastIndex()
-	if i > lastindex {
-		return 0, fmt.Errorf("index out of range")
+	log.Infof("dmupindex:%d lastindex:%d i:%d", dummyindex, lastindex, i)
+	if i < dummyindex || i > lastindex {
+		log.Infof("index out of range")
+		return 0, nil
 	}
 	if i > l.stabled {
 		return l.entries[i-l.entries[0].Index].Term, nil
 	}
-	return l.storage.Term(i)
+	// 刚好是新来的snap
+	if l.pendingSnapshot != nil && l.pendingSnapshot.Metadata.Index == i {
+		return l.pendingSnapshot.Metadata.Term, nil
+	}
+	term, err := l.storage.Term(i)
+	if err != nil {
+		panic(err)
+	}
+	return term, nil
 }
 
 func (l *RaftLog) appliedTo(i uint64, id uint64) {
@@ -192,7 +217,7 @@ func (l *RaftLog) AppendEntries(ents ...*pb.Entry) {
 func (l *RaftLog) commitTo(commit uint64) {
 	if l.committed < commit {
 		if commit > l.LastIndex() {
-			log.Fatalf("To commit log index > LastIndex")
+			log.Panicf("tocommit(%d) is out of range [lastIndex(%d)]. Was the raft log corrupted, truncated, or lost?", commit, l.LastIndex())
 		}
 		l.committed = commit
 	}
@@ -221,4 +246,21 @@ func (l *RaftLog) entriesSince(index uint64) []pb.Entry {
 		return l.findentries(offset, high)
 	}
 	return []pb.Entry{}
+}
+
+func (l *RaftLog) matchTerm(i, term uint64) bool {
+	t, err := l.Term(i)
+	if err != nil {
+		return false
+	}
+	return t == term
+}
+
+func (l *RaftLog) restore(s *pb.Snapshot) {
+	log.Infof("log [%v] starts to restore snapshot [index: %d, term: %d]", l, s.Metadata.Index, s.Metadata.Term)
+	// 这里不能用commitTo
+	l.committed = s.Metadata.Index
+	l.stabled = s.Metadata.Index
+	l.entries = []pb.Entry{}
+	l.pendingSnapshot = s
 }
