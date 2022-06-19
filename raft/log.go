@@ -99,11 +99,30 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 	return l.entries
 }
 
+// 是否有未stable entries
+func (l *RaftLog) hasUnstableEntries() bool {
+	return l.LastIndex() > l.stabled
+}
+
 // nextEnts returns all the committed but not applied entries
-func (l *RaftLog) nextEnts() (ents []pb.Entry) {
+func (l *RaftLog) nextEnts() []pb.Entry {
 	// Your Code Here (2A).
-	ents, _ = l.findentries(l.applied+1, l.committed+1)
+	// 如果有snap,会截断,apply可能小于firstindex,因为snap来了，更新了commitindex，但是apply还没到ready，还没应用，所以会出现applyindex<firstindex
+	left := max(l.applied+1, l.FirstIndex())
+	if l.committed+1 == left {
+		return []pb.Entry{}
+	}
+	ents, err := l.findentries(left, l.committed+1)
+	if err != nil {
+		log.Panic("unexpected error when get nextEnts")
+	}
+
 	return ents
+}
+
+func (l *RaftLog) hasNextEnts() bool {
+	left := max(l.applied+1, l.FirstIndex())
+	return l.committed+1 > left
 }
 
 func (l *RaftLog) FirstIndex() uint64 {
@@ -207,11 +226,16 @@ func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
 	return ents, nil
 }
 
+// 返回snap
 func (l *RaftLog) findSnap() (pb.Snapshot, error) {
 	if l.pendingSnapshot != nil {
 		return *l.pendingSnapshot, nil
 	}
 	return l.storage.Snapshot()
+}
+
+func (l *RaftLog) hasPendingSnapshot() bool {
+	return l.pendingSnapshot != nil && !IsEmptySnap(l.pendingSnapshot)
 }
 
 // 加入新的entry
@@ -240,6 +264,28 @@ func (l *RaftLog) commitTo(commit uint64) {
 			log.Panicf("tocommit(%d) is out of range [lastIndex(%d)]. Was the raft log corrupted, truncated, or lost?", commit, l.LastIndex())
 		}
 		l.committed = commit
+	}
+}
+
+func (l *RaftLog) stableTo(stable, term uint64) {
+	st, err := l.Term(stable)
+	if err != nil {
+		// 出错应该是，这一块log已经删掉了，已经应用了
+		return
+	}
+
+	if st == term && stable > l.stabled {
+		l.entries = l.entries[stable-l.stabled:]
+		l.stabled = stable
+		// 是否收缩entry
+		//
+	}
+
+}
+
+func (l *RaftLog) stableSnapTo(sindex, sterm uint64) {
+	if l.pendingSnapshot != nil && l.pendingSnapshot.Metadata.Index == sindex && l.pendingSnapshot.Metadata.Term == sterm {
+		l.pendingSnapshot = nil
 	}
 }
 
