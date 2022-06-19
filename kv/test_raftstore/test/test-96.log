@@ -1,0 +1,23 @@
+=== RUN   TestUnreliable2B
+2022/06/17 17:24:25.315842 node.go:193: [0;37m[info] start raft store node, storeID: 1[0m
+2022/06/17 17:24:25.316249 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 >  create peer with ID 1[0m
+2022/06/17 17:24:25.316357 raftstore.go:174: [0;37m[info] start store 1, region_count 1, tombstone_count 0, takes 240.1µs[0m
+2022/06/17 17:24:25.317417 node.go:193: [0;37m[info] start raft store node, storeID: 2[0m
+2022/06/17 17:24:25.317553 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 >  create peer with ID 2[0m
+2022/06/17 17:24:25.317613 raftstore.go:174: [0;37m[info] start store 2, region_count 1, tombstone_count 0, takes 98.3µs[0m
+2022/06/17 17:24:25.318488 node.go:193: [0;37m[info] start raft store node, storeID: 3[0m
+2022/06/17 17:24:25.318672 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 >  create peer with ID 3[0m
+2022/06/17 17:24:25.318807 raftstore.go:174: [0;37m[info] start store 3, region_count 1, tombstone_count 0, takes 188µs[0m
+2022/06/17 17:24:25.319610 node.go:193: [0;37m[info] start raft store node, storeID: 4[0m
+2022/06/17 17:24:25.319752 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 >  create peer with ID 4[0m
+2022/06/17 17:24:25.319805 raftstore.go:174: [0;37m[info] start store 4, region_count 1, tombstone_count 0, takes 89.1µs[0m
+2022/06/17 17:24:25.320607 node.go:193: [0;37m[info] start raft store node, storeID: 5[0m
+2022/06/17 17:24:25.320738 peer.go:41: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 > peers:<id:1 store_id:1 >  create peer with ID 5[0m
+2022/06/17 17:24:25.320792 raftstore.go:174: [0;37m[info] start store 5, region_count 1, tombstone_count 0, takes 90.7µs[0m
+2022/06/17 17:25:03.782494 node.go:198: [0;37m[info] stop raft store thread, storeID: 1[0m
+2022/06/17 17:25:03.800798 node.go:198: [0;37m[info] stop raft store thread, storeID: 2[0m
+2022/06/17 17:25:03.803000 node.go:198: [0;37m[info] stop raft store thread, storeID: 3[0m
+2022/06/17 17:25:03.803100 node.go:198: [0;37m[info] stop raft store thread, storeID: 4[0m
+2022/06/17 17:25:03.803182 node.go:198: [0;37m[info] stop raft store thread, storeID: 5[0m
+--- PASS: TestUnreliable2B (41.85s)
+PASS

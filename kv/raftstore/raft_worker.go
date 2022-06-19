@@ -6,6 +6,7 @@ import (
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/message"
 )
 
+// raftworker里面有peer reciver
 // raftWorker is responsible for run raft commands and apply raft logs.
 type raftWorker struct {
 	pr *router
@@ -51,6 +52,7 @@ func (rw *raftWorker) run(closeCh <-chan struct{}, wg *sync.WaitGroup) {
 			if peerState == nil {
 				continue
 			}
+			// log.Infof("msg:%v", msg)
 			newPeerMsgHandler(peerState.peer, rw.ctx).HandleMsg(msg)
 		}
 		for _, peerState := range peerStateMap {

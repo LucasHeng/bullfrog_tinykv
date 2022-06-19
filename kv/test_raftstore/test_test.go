@@ -209,6 +209,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 					value := "x " + strconv.Itoa(cli) + " " + strconv.Itoa(j) + " y"
 					// log.Infof("%d: client new put %v,%v\n", cli, key, value)
 					cluster.MustPut([]byte(key), []byte(value))
+					//log.Infof("%d: client new put %v,%v successed\n", cli, key, value)
 					last = NextValue(last, value)
 					j++
 				} else {
@@ -221,6 +222,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 						log.Fatalf("get wrong value, client %v\nwant:%v\ngot: %v\n", cli, last, v)
 					}
 				}
+				// log.Infof("cli:%d %d", cli, j)
 			}
 		})
 

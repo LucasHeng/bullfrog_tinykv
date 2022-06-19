@@ -213,6 +213,7 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 	leader := c.LeaderOfRegion(regionID)
 	for {
 		if time.Since(startTime) > timeout {
+			log.Infof("time:%v timeout:%v", time.Since(startTime), timeout)
 			return nil, nil
 		}
 		if leader == nil {

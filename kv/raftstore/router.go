@@ -17,6 +17,7 @@ type peerState struct {
 	peer   *peer
 }
 
+// router有
 // router routes a message to a peer.
 type router struct {
 	peers       sync.Map // regionID -> peerState

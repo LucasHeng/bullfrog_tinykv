@@ -152,37 +152,48 @@ func (rn *RawNode) Step(m pb.Message) error {
 // Ready returns the current point-in-time state of this RawNode.
 func (rn *RawNode) Ready() Ready {
 	// Your Code Here (2A).
-	rd := Ready{}
+	rd := Ready{Entries: []pb.Entry{}, CommittedEntries: []pb.Entry{}}
+	// ss是否有更新
 	ss := rn.Raft.softState()
 	if !compareSS(ss, rn.prevSS) {
 		rd.SoftState = &ss
 	}
+	// hs是否有更新,hs也不能为空
 	hs := rn.Raft.hardState()
-	if !compareHs(hs, rn.prevHs) {
+	if !isEmtpyHardState(hs) && !compareHs(hs, rn.prevHs) {
 		rd.HardState = hs
 	}
-	if len(rn.Raft.RaftLog.entries) != 0 {
+	// 是否有还未stable的entry
+	if len(rn.Raft.RaftLog.unstableEntries()) != 0 {
 		// 找到未stabled的entries
-		rd.Entries = rn.Raft.RaftLog.entries[rn.Raft.RaftLog.stabled+1-rn.Raft.RaftLog.entries[0].Index:]
+		rd.Entries = append(rd.Entries, rn.Raft.RaftLog.unstableEntries()...)
 		if flag == "copy" || flag == "all" {
 			DPrintf("entries: %v", rd.Entries)
 		}
 	}
-	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
-		rd.CommittedEntries = rn.Raft.RaftLog.entriesSince(rn.commitSinceIndex)
+	// 是否还有commit但是还未apply的entries
+	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
+		rd.CommittedEntries = append(rd.CommittedEntries, rn.Raft.RaftLog.nextEnts()...)
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
 	}
+	PrintReady(rd, rn.Raft.id)
+	// 是否有新的消息
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
 	}
+	rn.Raft.msgs = make([]pb.Message, 0)
 	return rd
 }
 
 // hardstate比较
 func compareHs(l pb.HardState, r pb.HardState) bool {
 	return l.Term == r.Term && l.Vote == r.Vote && l.Commit == r.Commit
+}
+
+func isEmtpyHardState(r pb.HardState) bool {
+	return compareHs(r, pb.HardState{})
 }
 
 // HasReady called when RawNode user need to check if any Ready pending.
@@ -201,14 +212,15 @@ func (rn *RawNode) HasReady() bool {
 	if rn.Raft.softState() != rn.prevSS {
 		return true
 	}
-	if !compareHs(rn.Raft.hardState(), rn.prevHs) {
+	if !isEmtpyHardState(rn.Raft.hardState()) && !compareHs(rn.Raft.hardState(), rn.prevHs) {
 		return true
 	}
 	// 有未持久的entries
 	if rn.Raft.RaftLog.LastIndex() > rn.Raft.RaftLog.stabled {
 		return true
 	}
-	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
+	// 有未应用的commit entry
+	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
 		return true
 	}
 	return false
@@ -218,14 +230,17 @@ func (rn *RawNode) HasReady() bool {
 // last Ready results.
 func (rn *RawNode) Advance(rd Ready) {
 	// Your Code Here (2A).
+	// hs有更新就换
 	if !compareHs(rd.HardState, pb.HardState{}) {
 		rn.prevHs = rd.HardState
 	}
+	// ss有更新就换
 	if rd.SoftState != nil {
 		if !compareSS(*rd.SoftState, SoftState{}) {
 			rn.prevSS = *rd.SoftState
 		}
 	}
+	// 将entries持久化，更新stabled
 	if len(rd.Entries) != 0 {
 		rn.Raft.RaftLog.stabled = rd.Entries[len(rd.Entries)-1].Index
 	}
