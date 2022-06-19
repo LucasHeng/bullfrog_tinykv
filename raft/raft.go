@@ -244,6 +244,9 @@ func (r *Raft) sendAppend(to uint64) bool {
 		// 获取snap
 		snap, err := r.RaftLog.findSnap()
 		if err != nil {
+			if err == ErrSnapshotTemporarilyUnavailable {
+				return false
+			}
 			panic(err)
 		}
 
