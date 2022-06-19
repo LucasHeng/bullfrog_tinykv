@@ -104,6 +104,7 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		panic(err)
 	}
 	if len(msg.Requests) != 0 {
+		// 这是raftcmd
 		for _, req := range msg.Requests {
 			switch req.CmdType {
 			case raft_cmdpb.CmdType_Invalid:
@@ -166,6 +167,23 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 					d.proposals = d.proposals[1:]
 				}
 			}
+		}
+	}
+	// 可能是都有，所以不能else if
+	if msg.AdminRequest != nil {
+		areq := msg.GetAdminRequest()
+		switch areq.CmdType {
+		case raft_cmdpb.AdminCmdType_CompactLog:
+			log := areq.GetCompactLog()
+			// 修改applystate的trun
+			if log.GetCompactIndex() >= d.peerStorage.truncatedIndex() {
+				d.peerStorage.applyState.TruncatedState.Index = log.GetCompactIndex()
+				d.peerStorage.applyState.TruncatedState.Term = log.GetCompactTerm()
+				kvWB.SetMeta(meta.ApplyStateKey(d.Region().Id), d.peerStorage.applyState)
+				d.ScheduleCompactLog(log.GetCompactIndex())
+			}
+		default:
+			panic("unexist admincmd")
 		}
 	}
 }
@@ -241,7 +259,7 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 	}
 	// Your Code Here (2B).
 	// 放入回调
-	if msg.AdminRequest == nil {
+	if len(msg.Requests) != 0 {
 		d.proposals = append(d.proposals, &proposal{
 			index: d.nextProposalIndex(),
 			term:  d.Term(),
@@ -254,6 +272,22 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			panic(err)
 		}
 		d.RaftGroup.Propose(data)
+	} else if msg.AdminRequest != nil {
+		d.proposeAdminRequest(msg, cb)
+	}
+
+}
+
+func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb *message.Callback) {
+	switch msg.AdminRequest.CmdType {
+	case raft_cmdpb.AdminCmdType_CompactLog:
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.Propose(data)
+	default:
+		panic("no such admin request")
 	}
 }
 

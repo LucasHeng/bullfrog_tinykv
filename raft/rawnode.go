@@ -71,7 +71,7 @@ func (rd Ready) applyIndex() uint64 {
 		return rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 	}
 	// 如果没有commitindex，有snap
-	if rd.Snapshot.Metadata.Index > 0 {
+	if rd.Snapshot.Metadata != nil && rd.Snapshot.Metadata.Index > 0 {
 		return rd.Snapshot.Metadata.Index
 	}
 	return None
