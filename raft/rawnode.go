@@ -152,7 +152,10 @@ func (rn *RawNode) Step(m pb.Message) error {
 // Ready returns the current point-in-time state of this RawNode.
 func (rn *RawNode) Ready() Ready {
 	// Your Code Here (2A).
-	rd := Ready{}
+	rd := Ready{
+		Entries:          rn.Raft.RaftLog.unstableEntries(),
+		CommittedEntries: rn.Raft.RaftLog.nextEnts(),
+	}
 	ss := rn.Raft.softState()
 	if !compareSS(ss, rn.prevSS) {
 		rd.SoftState = &ss
@@ -161,21 +164,10 @@ func (rn *RawNode) Ready() Ready {
 	if !compareHs(hs, rn.prevHs) {
 		rd.HardState = hs
 	}
-	if len(rn.Raft.RaftLog.entries) != 0 {
-		// 找到未stabled的entries
-		rd.Entries = rn.Raft.RaftLog.unstableEntries()
-		if flag == "copy" || flag == "all" {
-			DPrintf("entries: %v", rd.Entries)
-		}
-	}
-	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
-		rd.CommittedEntries = rn.Raft.RaftLog.nextEnts()
-		if flag == "copy" || flag == "all" {
-			DPrintf("committedEntries: %v", rd.CommittedEntries)
-		}
-	}
+
 	if !IsEmptySnap(rn.Raft.RaftLog.pendingSnapshot) {
 		rd.Snapshot = *rn.Raft.RaftLog.pendingSnapshot
+		rn.Raft.RaftLog.pendingSnapshot = nil
 		ToCPrint("[Ready] hash snap : %v", rd.Snapshot)
 	}
 	if len(rn.Raft.msgs) != 0 {
@@ -193,19 +185,6 @@ func compareHs(l pb.HardState, r pb.HardState) bool {
 // HasReady called when RawNode user need to check if any Ready pending.
 func (rn *RawNode) HasReady() bool {
 	// Your Code Here (2A).
-	// 判断是否有新的东西需要更新
-	// 如新的entries，新的应用entries
-	// 新的状态？
-
-	// 有新的消息
-	if len(rn.Raft.msgs) != 0 {
-		return true
-	}
-
-	if len(rn.Raft.RaftLog.unstableEntries()) > 0 {
-		return true
-	}
-
 	// 状态更新
 	if rn.Raft.softState() != rn.prevSS {
 		return true
@@ -213,13 +192,12 @@ func (rn *RawNode) HasReady() bool {
 	if !compareHs(rn.Raft.hardState(), rn.prevHs) {
 		return true
 	}
-	// 有未持久的entries
-	if rn.Raft.RaftLog.LastIndex() > rn.Raft.RaftLog.stabled {
+	// 有需要持久化的日志或apply的日志或有新的msg
+	if len(rn.Raft.RaftLog.unstableEntries()) > 0 ||
+		len(rn.Raft.msgs) > 0 || len(rn.Raft.RaftLog.nextEnts()) > 0 {
 		return true
 	}
-	if rn.Raft.RaftLog.hasEntriesSince(rn.commitSinceIndex) {
-		return true
-	}
+	// 有快照需要应用
 	if !IsEmptySnap(rn.Raft.RaftLog.pendingSnapshot) {
 		ToCPrint("[HasReady] has snap")
 		return true
@@ -247,8 +225,6 @@ func (rn *RawNode) Advance(rd Ready) {
 		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 		rn.Raft.RaftLog.applied = rn.commitSinceIndex
 	}
-	// 这里得清空 pendingSnapshot，不然在最后一个test会出现找到空 snap 文件的情况
-	rn.Raft.RaftLog.pendingSnapshot = nil
 	// 可能需要更新 raft 的 compact 状态
 	rn.Raft.RaftLog.maybeCompact()
 }

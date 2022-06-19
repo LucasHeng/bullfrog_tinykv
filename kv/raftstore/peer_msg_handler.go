@@ -167,10 +167,10 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 					}
 				case raft_cmdpb.CmdType_Get:
 					// 如果是get，为了确保能读到最新数据，应该将前面的batch 写入storage
-					//d.peerStorage.applyState.AppliedIndex = ent.Index
-					//wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-					//wb.WriteToDB(d.peerStorage.Engines.Kv)
-					//wb = &engine_util.WriteBatch{}
+					d.peerStorage.applyState.AppliedIndex = ent.Index
+					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+					wb.WriteToDB(d.peerStorage.Engines.Kv)
+					wb = &engine_util.WriteBatch{}
 					//fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
 					val, err := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
 					if err != nil {

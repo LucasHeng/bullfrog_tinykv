@@ -106,13 +106,12 @@ func (l *RaftLog) maybeCompact() {
 // unstableEntries return all the unstable entries
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
-	// 若stabled在中
-	// 需要从上次截断的开始
-	// 一开始我们的实现是在这里截断日志：l.entries = l.entries[l.stabled+1-l.entries[0].Index:]
-	// 因为有了 maybeCompact，所以日志只需要在那边截断，这边不需要跟着 stabled来截断日志
-	// 只需要返回对应 log 即可
-	if len(l.entries) != 0 && l.stabled+1 >= l.snapIndex {
-		return l.entries[l.stabled+1-l.snapIndex:]
+	if len(l.entries) > 0 {
+		// 特判一下，防止越界
+		if (l.stabled-l.FirstIndex()+1 < 0) || (l.stabled-l.FirstIndex()+1 > uint64(len(l.entries))) {
+			return nil
+		}
+		return l.entries[l.stabled-l.FirstIndex()+1:]
 	}
 	return nil
 }
@@ -120,8 +119,29 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	ents = l.findentries(l.applied+1, l.committed+1)
-	return ents
+	// 特判一下有无log
+	if len(l.entries) > 0 {
+		// l.committed-l.FirstIndex()+1为这次要取的末尾，如果小于0就说明已经不在内存中了
+		// l.applied - l.FirstIndex() + 1 是本次要取的起始index，如果大于 l.LastIndex()也说明不在内存中了
+		if l.committed-l.FirstIndex()+1 < 0 || l.applied-l.FirstIndex()+1 > l.LastIndex() {
+			return nil
+		}
+		// 特判防止越界
+		if l.applied-l.FirstIndex()+1 >= 0 && l.committed-l.FirstIndex()+1 <= uint64(len(l.entries)) {
+			return l.entries[l.applied-l.FirstIndex()+1 : l.committed-l.FirstIndex()+1]
+		}
+	}
+	return nil
+}
+
+// FirstIndex 返回应该被操作的第一个索引值
+// the first log entry that is available via Entries
+func (l *RaftLog) FirstIndex() uint64 {
+	if len(l.entries) == 0 {
+		i, _ := l.storage.FirstIndex()
+		return i - 1
+	}
+	return l.entries[0].Index
 }
 
 // LastIndex return the last index of the log entries
@@ -149,6 +169,7 @@ func (l *RaftLog) isUpToDate(index uint64, term uint64) bool {
 }
 
 // Term return the term of the entry in the given index
+// Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
 	// 有未persist的snapshot
@@ -157,7 +178,9 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 		return 0, fmt.Errorf("index out of range")
 	}
 	if i > l.stabled && len(l.entries) > 0 {
-		return l.entries[i-l.entries[0].Index].Term, nil
+		if i >= l.entries[0].Index && (i-l.entries[0].Index) < uint64(len(l.entries)) {
+			return l.entries[i-l.entries[0].Index].Term, nil
+		}
 	}
 	term, err := l.storage.Term(i)
 	// 这里需要判断一下，如果是被截断了，那么就要返回 errCompact
