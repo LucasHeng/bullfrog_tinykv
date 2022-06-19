@@ -729,16 +729,16 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	r.becomeFollower(m.Term, m.From)
 	// 如果发送的message的消息早于commit，则这个消息应该拒绝，因为commit的entry不应该修改
 	// 回复的Index应该是已经匹配的Index
-	if m.Index < r.RaftLog.committed {
-		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
-		msg.Index = r.RaftLog.committed
-		msg.LogTerm = None
-		r.msgs = append(r.msgs, msg)
-		if ToB {
-			ToBPrint("[%v %v handleAppendEntries] reject append because m.Index %v < r.RaftLog.committed %v", r.State, r.id, m.Index, r.RaftLog.committed)
-		}
-		return
-	}
+	//if m.Index < r.RaftLog.committed {
+	//	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
+	//	msg.Index = r.RaftLog.committed
+	//	msg.LogTerm = None
+	//	r.msgs = append(r.msgs, msg)
+	//	if ToB {
+	//		ToBPrint("[%v %v handleAppendEntries] reject append because m.Index %v < r.RaftLog.committed %v", r.State, r.id, m.Index, r.RaftLog.committed)
+	//	}
+	//	return
+	//}
 	if !r.isLogmatch(m.Index, m.LogTerm) {
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
 		hintindex := min(m.Index, r.RaftLog.LastIndex())
