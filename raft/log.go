@@ -102,7 +102,7 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	ents = l.findentries(l.applied+1, l.committed+1)
+	ents, _ = l.findentries(l.applied+1, l.committed+1)
 	return ents
 }
 
@@ -176,8 +176,21 @@ func (l *RaftLog) appliedTo(i uint64, id uint64) {
 }
 
 // 获得相应区间的entries
-func (l *RaftLog) findentries(lo uint64, hi uint64) []pb.Entry {
+func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
+	//初始化entries
 	var ents []pb.Entry
+
+	// 区间判定
+	if lo > hi {
+		log.Panicf("invalid range:lo %d and hi %d", lo, hi)
+	}
+	if lo < l.FirstIndex() {
+		return ents, ErrCompacted
+	}
+	if hi > l.LastIndex()+1 {
+		log.Panicf("illegal slice bound[%d,%d) out of bound[%d,%d]", lo, hi, l.FirstIndex(), l.LastIndex())
+	}
+
 	// 如果有一部分在storage里面，先找那一部分
 	if lo <= l.stabled {
 		stable_ents, _ := l.storage.Entries(lo, min(hi, l.stabled+1))
@@ -191,7 +204,14 @@ func (l *RaftLog) findentries(lo uint64, hi uint64) []pb.Entry {
 	if flag == "copy" || flag == "all" {
 		// DPrintf("log.go line 101 ents:%d", len(ents))
 	}
-	return ents
+	return ents, nil
+}
+
+func (l *RaftLog) findSnap() (pb.Snapshot, error) {
+	if l.pendingSnapshot != nil {
+		return *l.pendingSnapshot, nil
+	}
+	return l.storage.Snapshot()
 }
 
 // 加入新的entry
@@ -235,17 +255,21 @@ func (l *RaftLog) hasEntriesSince(index uint64) bool {
 }
 
 // 返回某个index后的entries
-func (l *RaftLog) entriesSince(index uint64) []pb.Entry {
-	firstindex, _ := l.storage.FirstIndex()
-	offset := max(index+1, firstindex)
-	high := l.committed + 1
-	if high > offset {
-		if flag == "copy" || flag == "all" {
-			DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
-		}
-		return l.findentries(offset, high)
+func (l *RaftLog) entriesSince(index uint64) ([]pb.Entry, error) {
+	// firstindex, _ := l.storage.FirstIndex()
+	// offset := max(index+1, firstindex)
+	// high := l.committed + 1
+	// if high > offset {
+	// 	if flag == "copy" || flag == "all" {
+	// 		DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
+	// 	}
+	// 	return l.findentries(offset, high)
+	// }
+	// return []pb.Entry{}
+	if index > l.LastIndex() {
+		return nil, nil
 	}
-	return []pb.Entry{}
+	return l.findentries(index, l.LastIndex()+1)
 }
 
 func (l *RaftLog) matchTerm(i, term uint64) bool {

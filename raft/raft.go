@@ -167,7 +167,8 @@ type Raft struct {
 // newRaft return a raft peer with the given config
 func newRaft(c *Config) *Raft {
 	// Your Code Here (2A).
-	// 可能是机器重启？
+	// 可能是创建或者机器重启？
+
 	if flag == "election" {
 		DPrintf("config:%v", c)
 	}
@@ -198,7 +199,9 @@ func newRaft(c *Config) *Raft {
 		if len(cs.Nodes) != 0 {
 			c.peers = cs.Nodes
 		}
-		r.loadState(hs)
+		if !IsEmptyHardState(hs) {
+			r.loadState(hs)
+		}
 		DPrintf("come here:%v", hs)
 	}
 
@@ -222,21 +225,57 @@ func newRaft(c *Config) *Raft {
 func (r *Raft) sendAppend(to uint64) bool {
 	// Your Code Here (2A).
 	process := r.Prs[to]
-	msg := pb.Message{MsgType: pb.MessageType_MsgAppend, To: to, From: r.id, Term: r.Term}
-	msg.Index = process.Next - 1
-	msg.LogTerm, _ = r.RaftLog.Term(msg.Index)
-	// 拿到的entry，转换成*entry
-	if flag == "copy" || flag == "all" {
-		// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
-	}
-	ents := r.RaftLog.findentries(process.Next, r.RaftLog.LastIndex()+1)
-	for i := range ents {
-		msg.Entries = append(msg.Entries, &ents[i])
-	}
-	msg.Commit = r.RaftLog.committed
-	r.msgs = append(r.msgs, msg)
-	if flag == "copy" || flag == "all" {
-		DPrintf("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
+	term, errt := r.RaftLog.Term(process.Next - 1)
+	ents, erre := r.RaftLog.findentries(process.Next, r.RaftLog.LastIndex()+1)
+
+	// if len(ents) == 0 {
+	// 	// 空的append没必要发了
+	// 	return false
+	// }
+
+	if errt != nil || erre != nil {
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgSnapshot,
+			To:      to,
+			From:    r.id,
+			Term:    r.Term,
+		}
+
+		// 获取snap
+		snap, err := r.RaftLog.findSnap()
+		if err != nil {
+			panic(err)
+		}
+
+		if IsEmptySnap(&snap) {
+			panic("snap is empty")
+		}
+
+		msg.Snapshot = &snap
+		r.msgs = append(r.msgs, msg)
+
+	} else {
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppend,
+			To:      to,
+			From:    r.id,
+			Term:    r.Term,
+		}
+		msg.Index = process.Next - 1
+		msg.LogTerm = term
+		// 拿到的entry，转换成*entry
+		if flag == "copy" || flag == "all" {
+			// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
+		}
+
+		for i := range ents {
+			msg.Entries = append(msg.Entries, &ents[i])
+		}
+		msg.Commit = r.RaftLog.committed
+		r.msgs = append(r.msgs, msg)
+		if flag == "copy" || flag == "all" {
+			DPrintf("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
+		}
 	}
 	return true
 }
@@ -411,8 +450,8 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 
 // Step the entrance of handle message, see `MessageType`
 // on `eraftpb.proto` for what msgs should be handled
+// Your Code Here (2A).
 func (r *Raft) Step(m pb.Message) error {
-	// Your Code Here (2A).
 	// log.Infof("step msg:%v,raftstate:%v", m, r.State.String())
 	switch r.State {
 	case StateFollower:
