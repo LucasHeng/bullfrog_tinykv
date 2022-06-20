@@ -171,6 +171,9 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 		return 0, nil
 	}
 	if i > l.stabled {
+		if len(l.entries) == 0 {
+			return 0, nil
+		}
 		return l.entries[i-l.entries[0].Index].Term, nil
 	}
 	// 刚好是新来的snap
