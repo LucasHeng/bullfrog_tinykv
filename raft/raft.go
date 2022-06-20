@@ -162,7 +162,7 @@ type Raft struct {
 	// (Used in 3A conf change)
 	PendingConfIndex uint64
 
-	//SendSnapShot           map[uint64]int
+	SendSnapShot           map[uint64]int
 	PendingSnapshotTimeOut int
 }
 
@@ -191,7 +191,7 @@ func newRaft(c *Config) *Raft {
 		leadTransferee:         0, //3A
 		PendingConfIndex:       0, //3A
 		PendingSnapshotTimeOut: 10,
-		//SendSnapShot:           make(map[uint64]int),
+		SendSnapShot:           make(map[uint64]int),
 	}
 	// 恢复初始状态？
 	if hs, cs, err := c.Storage.InitialState(); err == nil {
@@ -255,10 +255,10 @@ func (r *Raft) sendAppend(to uint64) bool {
 // 先实现最简单的一种：直接发送整个snapshot
 func (r *Raft) sendSnapshot(to uint64) {
 	ToCPrint("[sendSnapshot] %v send to %v", r.id, to)
-	//if _, ok := r.SendSnapShot[to]; ok {
-	//	ToCPrint("[sendSnapshot] %v already sended to %v, directly return", r.id, to)
-	//	return
-	//}
+	if _, ok := r.SendSnapShot[to]; ok {
+		ToCPrint("[sendSnapshot] %v already sended to %v, directly return", r.id, to)
+		return
+	}
 	snap, err := r.RaftLog.storage.Snapshot()
 	if err != nil {
 		fmt.Println("[get snapshot error]:", err)
@@ -272,7 +272,7 @@ func (r *Raft) sendSnapshot(to uint64) {
 		Term:     r.Term,
 	})
 	r.Prs[to].Next = snap.Metadata.Index
-	//r.SendSnapShot[to] = 0
+	r.SendSnapShot[to] = 0
 }
 
 func (r *Raft) DebugEntries(ents []*pb.Entry) {
@@ -296,7 +296,7 @@ func (r *Raft) sendHeartbeat(to uint64) {
 // tick advances the internal logical clock by a single tick.
 func (r *Raft) tick() {
 	// Your Code Here (2A).
-	//r.tickSnap()
+	r.tickSnap()
 	switch r.State {
 	case StateFollower, StateCandidate:
 		r.tickElection()
@@ -305,15 +305,16 @@ func (r *Raft) tick() {
 	}
 }
 
-//func (r *Raft) tickSnap() {
-//	for node, _ := range r.SendSnapShot {
-//		r.SendSnapShot[node]++
-//		if r.SendSnapShot[node] >= r.PendingSnapshotTimeOut {
-//			ToCPrint("[tickSnap] pending snapshot time out ,delete ")
-//			delete(r.SendSnapShot, node)
-//		}
-//	}
-//}
+func (r *Raft) tickSnap() {
+	for node, _ := range r.SendSnapShot {
+		r.SendSnapShot[node]++
+		if r.SendSnapShot[node] >= r.PendingSnapshotTimeOut {
+			ToCPrint("[tickSnap] pending snapshot time out ,delete ")
+			delete(r.SendSnapShot, node)
+		}
+	}
+}
+
 func (r *Raft) tickElection() {
 	r.electionElapsed++
 	if r.electionElapsed >= r.randElectionTimeout {
@@ -342,6 +343,7 @@ func (r *Raft) becomeFollower(term uint64, lead uint64) {
 	r.reset(term)
 	r.Lead = lead
 	r.State = StateFollower
+	r.leadTransferee = 0
 }
 
 // 新的term重置信息
@@ -503,6 +505,9 @@ func (r *Raft) stepFollower(m pb.Message) {
 		}
 
 	case pb.MessageType_MsgTimeoutNow:
+		if m.From != r.Lead {
+			return
+		}
 		// 开始新的选举
 		r.hup()
 	}
@@ -642,6 +647,9 @@ func (r *Raft) stepLeader(m pb.Message) {
 			}
 		}
 	case pb.MessageType_MsgPropose:
+		if r.leadTransferee != 0 {
+			return
+		}
 		//ToCPrint("[Propose] id: %d, term: %d, log Len %v, last Index %v", r.id, r.Term, len(r.RaftLog.entries), r.RaftLog.LastIndex())
 		// 提交entry,先给leader，再发给所有的
 		// 当前leader在转换？
@@ -650,6 +658,8 @@ func (r *Raft) stepLeader(m pb.Message) {
 		r.AppendEntries(m.Entries...)
 		r.broadcastAppend()
 		r.updateCommit()
+	case pb.MessageType_MsgTransferLeader:
+		r.handleTransferLeader(m)
 	case pb.MessageType_MsgAppend:
 		// leader也会收到Append消息
 		r.handleAppendEntries(m)
@@ -670,6 +680,21 @@ func (r *Raft) stepLeader(m pb.Message) {
 	case pb.MessageType_MsgSnapshot:
 		r.handleSnapshot(m)
 	}
+}
+
+// 处理 leader transfer
+func (r *Raft) handleTransferLeader(m pb.Message) {
+	// 如果是要求转移给自己，就直接返回
+	if m.From == r.id {
+		return
+	}
+	// 检查是否存在集群中
+	if _, ok := r.Prs[m.From]; !ok {
+		return
+	}
+	r.leadTransferee = m.From
+	// 直接发送 append 消息，然后在 response 里面处理
+	r.sendAppend(m.From)
 }
 
 // 处理appendResponse
@@ -694,6 +719,10 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 			var matchTerm uint64
 			matchindex, matchTerm = r.RaftLog.Findconflictbyterm(m.Index, m.LogTerm)
 			ToBPrint("[response] %v reject %v, find match index %v, MatchLogTerm : %v", m.From, m.To, matchindex, matchTerm)
+		} else if m.Reject && m.LogTerm == None {
+			if matchindex > 0 {
+				matchindex--
+			}
 		}
 		if m.Reject {
 			progress.Next = matchindex + 1
@@ -701,13 +730,27 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		} else {
 			progress.Next = matchindex + 1
 			progress.Match = matchindex
-			//if _, ok := r.SendSnapShot[m.From]; ok {
-			//	ToCPrint("[receive response] delete sendSnapshot %v", m.From)
-			//	delete(r.SendSnapShot, m.From)
-			//}
+			if _, ok := r.SendSnapShot[m.From]; ok {
+				ToCPrint("[receive response] delete sendSnapshot %v", m.From)
+				delete(r.SendSnapShot, m.From)
+			}
+			if r.leadTransferee != 0 {
+				r.updateCommit()
+				r.sendTimeOutNow(m.From)
+				return
+			}
 		}
 		r.updateCommit()
 	}
+}
+
+func (r *Raft) sendTimeOutNow(to uint64) {
+	msg := pb.Message{
+		From:    r.id,
+		To:      to,
+		MsgType: pb.MessageType_MsgTimeoutNow,
+	}
+	r.msgs = append(r.msgs, msg)
 }
 
 // handleAppendEntries handle AppendEntries RPC request
@@ -715,7 +758,6 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	// Your Code Here (2A).
 	// 收到了append请求
 	// DPrintf("line 581 {Node: %d in term:%d } send {Node: %d in term: %d state: %v} %v,%v,%v", m.From, m.Term, m.To, r.Term, r.State.String(), m.Index, m.LogTerm, r.isLogmatch(m.Index, m.LogTerm))
-
 	if r.Term > m.Term {
 		// 如果term比leader大，则拒绝
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
@@ -758,9 +800,10 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	r.handleEntries(m.Entries...)
 	lastindex := m.Index + uint64(len(m.Entries))
 	r.RaftLog.commitTo(min(lastindex, m.Commit))
-	//if m.Index < r.RaftLog.applied {
-	//	r.RaftLog.applied = m.Index
-	//}
+	if m.Index < r.RaftLog.applied {
+		ToCPrint("fix apply")
+		r.RaftLog.applied = m.Index
+	}
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
 	if ToB {
 		ToBPrint("[%v %v handleAppendEntries] success, now lastIndex:%v,actual len:%v, committed:%v, apply:%v", r.State, r.id, r.RaftLog.LastIndex(), len(r.RaftLog.entries), r.RaftLog.committed, r.RaftLog.applied)
@@ -895,11 +938,31 @@ func (r *Raft) sendSnapResp(to uint64) {
 // addNode add a new node to raft group
 func (r *Raft) addNode(id uint64) {
 	// Your Code Here (3A).
+	// 从头发送日志
+	if _, ok := r.Prs[id]; !ok {
+		r.Prs[id] = &Progress{
+			Match: 0,
+			Next:  1,
+		}
+		// 因为这里是 add，所以不需要去尝试提交
+	}
+	r.PendingConfIndex = None
 }
 
 // removeNode remove a node from raft group
 func (r *Raft) removeNode(id uint64) {
 	// Your Code Here (3A).
+	if _, ok := r.Prs[id]; ok {
+		delete(r.Prs, id)
+		if r.State == StateLeader {
+			/*
+				Apply the config change. This reduces quorum requirements so the pending command can now commit.
+				TestCommitAfterRemoveNode3A 里面有这段话：代表的例子就是，peer 数减少，可能之前无法提交的，现在可以提交了
+			*/
+			r.updateCommit()
+		}
+	}
+	r.PendingConfIndex = None
 }
 
 // 加载原先的HardState

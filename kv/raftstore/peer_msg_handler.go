@@ -83,7 +83,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 				log.Fatal("msg unmarshal error:", err)
 			}
 			if len(msg.Requests) > 0 {
-				logWb = d.handleRequests(msg.Requests, &ent, logWb)
+				logWb = d.handleRequests(msg, &ent, logWb)
 			}
 			// 处理像 compact .... 这些的 admin request，然后一起批量写入
 			if msg.AdminRequest != nil {
@@ -115,7 +115,9 @@ func (d *peerMsgHandler) handleAdminRequests(req *raft_cmdpb.AdminRequest, wb *e
 	}
 	return wb
 }
-func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
+func (d *peerMsgHandler) handleRequests(msg *raft_cmdpb.RaftCmdRequest, ent *eraftpb.Entry, wb *engine_util.WriteBatch) *engine_util.WriteBatch {
+	// 先把请求都写了
+	requests := msg.Requests
 	for _, req := range requests {
 		raft.ToBPrint("[handle ready] %v handle , type : %v", d.PeerId(), req.CmdType)
 		switch req.CmdType {
@@ -124,80 +126,104 @@ func (d *peerMsgHandler) handleRequests(requests []*raft_cmdpb.Request, ent *era
 			wb.SetCF(req.Put.Cf, req.Put.Key, req.Put.Value)
 		case raft_cmdpb.CmdType_Delete:
 			wb.DeleteCF(req.Delete.Cf, req.Delete.Key)
-		}
-		if len(d.proposals) > 0 && d.IsLeader() {
-			propose := d.proposals[0]
-			for propose.index < ent.Index {
-				// 通知那些已经过时的propose结束
-				/*
-					实验指导书：
-					ErrStaleCommand：可能由于领导者的变化，一些日志没有被提交，就被新的领导者的日志所覆盖。
-					但是客户端并不知道，仍然在等待响应。所以你应该返回这个命令，让客户端知道并再次重试该命令。
-				*/
-				propose.cb.Done(ErrResp(&util.ErrStaleCommand{}))
-				d.proposals = d.proposals[1:]
-				if len(d.proposals) == 0 {
-					return wb
-				}
-				propose = d.proposals[0]
-			}
-			if propose.index == ent.Index {
-				if propose.term != ent.Term {
-					NotifyStaleReq(ent.Term, propose.cb)
-					d.proposals = d.proposals[1:]
-					return wb
-				}
-				resp := &raft_cmdpb.RaftCmdResponse{
-					Header: &raft_cmdpb.RaftResponseHeader{},
-				}
-				switch req.CmdType {
-				case raft_cmdpb.CmdType_Put:
-					resp.Responses = []*raft_cmdpb.Response{
-						{
-							CmdType: raft_cmdpb.CmdType_Put,
-							Put:     &raft_cmdpb.PutResponse{},
-						},
-					}
-				case raft_cmdpb.CmdType_Delete:
-					resp.Responses = []*raft_cmdpb.Response{
-						{
-							CmdType: raft_cmdpb.CmdType_Delete,
-							Delete:  &raft_cmdpb.DeleteResponse{},
-						},
-					}
-				case raft_cmdpb.CmdType_Get:
-					// 如果是get，为了确保能读到最新数据，应该将前面的batch 写入storage
-					d.peerStorage.applyState.AppliedIndex = ent.Index
-					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-					wb.WriteToDB(d.peerStorage.Engines.Kv)
-					wb = &engine_util.WriteBatch{}
-					//fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
-					val, err := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
-					if err != nil {
-						panic(err)
-					}
-					resp.Responses = []*raft_cmdpb.Response{
-						{
-							CmdType: raft_cmdpb.CmdType_Get,
-							Get: &raft_cmdpb.GetResponse{
-								Value: val,
-							},
-						},
-					}
-				case raft_cmdpb.CmdType_Snap:
-					d.peerStorage.applyState.AppliedIndex = ent.Index
-					wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-					wb.WriteToDB(d.peerStorage.Engines.Kv)
-					wb = &engine_util.WriteBatch{}
-					resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
-					propose.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
-				}
-				propose.cb.Done(resp)
-				d.proposals = d.proposals[1:]
-			}
+		case raft_cmdpb.CmdType_Snap:
+
 		}
 	}
+	// 然后依次进行回复
+	// 首先找到 propose，看看有没有存在或者合不合法
+	if len(d.proposals) > 0 && d.IsLeader() {
+		propose := d.findProposal(ent)
+		if propose == nil {
+			return wb
+		}
+		resp := &raft_cmdpb.RaftCmdResponse{
+			Header: &raft_cmdpb.RaftResponseHeader{},
+		}
+		for _, req := range requests {
+			switch req.CmdType {
+			case raft_cmdpb.CmdType_Put:
+				r := &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Put,
+					Put:     &raft_cmdpb.PutResponse{},
+				}
+				resp.Responses = append(resp.Responses, r)
+			case raft_cmdpb.CmdType_Delete:
+				r := &raft_cmdpb.Response{
+
+					CmdType: raft_cmdpb.CmdType_Delete,
+					Delete:  &raft_cmdpb.DeleteResponse{},
+				}
+				resp.Responses = append(resp.Responses, r)
+			case raft_cmdpb.CmdType_Get:
+				// 如果是get，为了确保能读到最新数据，应该将前面的batch 写入storage
+				d.peerStorage.applyState.AppliedIndex = ent.Index
+				wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+				wb.WriteToDB(d.peerStorage.Engines.Kv)
+				wb = &engine_util.WriteBatch{}
+				//fmt.Println("debug[134行]: ", d.ctx.engine.Kv == d.peerStorage.Engines.Kv)
+				val, err := engine_util.GetCF(d.ctx.engine.Kv, req.Get.Cf, req.Get.Key)
+				if err != nil {
+					panic(err)
+				}
+				r := &raft_cmdpb.Response{
+
+					CmdType: raft_cmdpb.CmdType_Get,
+					Get: &raft_cmdpb.GetResponse{
+						Value: val,
+					},
+				}
+				resp.Responses = append(resp.Responses, r)
+			case raft_cmdpb.CmdType_Snap:
+				d.peerStorage.applyState.AppliedIndex = ent.Index
+				wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+				wb.WriteToDB(d.peerStorage.Engines.Kv)
+				wb = &engine_util.WriteBatch{}
+				if msg.Header.RegionEpoch.Version != d.Region().RegionEpoch.Version {
+					propose.cb.Done(ErrResp(&util.ErrEpochNotMatch{}))
+					return wb
+				}
+				resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap,
+					Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+				propose.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+			}
+			//}
+		}
+		propose.cb.Done(resp)
+	}
 	return wb
+}
+
+func (d *peerMsgHandler) findProposal(ent *eraftpb.Entry) *proposal {
+	var proposal *proposal
+	if len(d.proposals) > 0 {
+		p := d.proposals[0]
+		for p.index < ent.Index {
+			// 通知那些已经过时的propose结束
+			/*
+				实验指导书：
+				ErrStaleCommand：可能由于领导者的变化，一些日志没有被提交，就被新的领导者的日志所覆盖。
+				但是客户端并不知道，仍然在等待响应。所以你应该返回这个命令，让客户端知道并再次重试该命令。
+			*/
+			p.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+			d.proposals = d.proposals[1:]
+			if len(d.proposals) == 0 {
+				return nil
+			}
+			p = d.proposals[0]
+		}
+		if p.index != ent.Index {
+			return nil
+		}
+		if p.term != ent.Term {
+			NotifyStaleReq(ent.Term, p.cb)
+			d.proposals = d.proposals[1:]
+			return nil
+		}
+		proposal = p
+		d.proposals = d.proposals[1:]
+	}
+	return proposal
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
@@ -299,6 +325,18 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 				panic(err)
 			}
 			d.RaftGroup.Propose(data)
+		case raft_cmdpb.AdminCmdType_TransferLeader:
+			// 作为一个 Raft 命令，TransferLeader 将被提议为一个Raft 日志项。但是 TransferLeader 实际上是一个动作，
+			// 不需要复制到其他 peer，所以只需要调用 RawNode 的 TransferLeader() 方法，
+			// 而不是 TransferLeader 命令的Propose()。
+			d.RaftGroup.TransferLeader(msg.AdminRequest.TransferLeader.Peer.Id)
+			cb.Done(&raft_cmdpb.RaftCmdResponse{
+				Header: &raft_cmdpb.RaftResponseHeader{},
+				AdminResponse: &raft_cmdpb.AdminResponse{
+					CmdType:        raft_cmdpb.AdminCmdType_TransferLeader,
+					TransferLeader: &raft_cmdpb.TransferLeaderResponse{},
+				},
+			})
 		}
 	}
 }
