@@ -60,7 +60,7 @@ func checkClntAppends(t *testing.T, clnt int, v string, count int) {
 		wanted := "x " + strconv.Itoa(clnt) + " " + strconv.Itoa(j) + " y"
 		off := strings.Index(v, wanted)
 		if off < 0 {
-			t.Fatalf("%v missing element %v in Append result %v", clnt, wanted, v)
+			t.Fatalf("%v missing element %v in Append result %v with count %v", clnt, wanted, v, count)
 		}
 		off1 := strings.LastIndex(v, wanted)
 		if off1 != off {
@@ -370,6 +370,7 @@ func TestOnePartition2B(t *testing.T) {
 		}
 	}
 
+	log.Infof("majority:{s1:%v}{s2:%v}", s1, s2)
 	// leader in majority, partition doesn't affect write/read
 	cluster.AddFilter(&PartitionFilter{
 		s1: s1,
@@ -384,6 +385,7 @@ func TestOnePartition2B(t *testing.T) {
 	// old leader in minority, new leader should be elected
 	s2 = append(s2, s1[2])
 	s1 = s1[:2]
+	log.Infof("minority:{s1:%v}{s2:%v}", s1, s2)
 	cluster.AddFilter(&PartitionFilter{
 		s1: s1,
 		s2: s2,
@@ -394,6 +396,7 @@ func TestOnePartition2B(t *testing.T) {
 	MustGetEqual(cluster.engines[s1[1]], []byte("k1"), []byte("v1"))
 	cluster.ClearFilters()
 
+	log.Infof("heals")
 	// when partition heals, old leader should sync data
 	cluster.MustPut([]byte("k2"), []byte("v2"))
 	MustGetEqual(cluster.engines[s1[0]], []byte("k2"), []byte("v2"))
