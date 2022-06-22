@@ -242,7 +242,8 @@ func (rn *RawNode) Advance(rd Ready) {
 	}
 	// 将entries持久化，更新stabled
 	if len(rd.Entries) != 0 {
-		rn.Raft.RaftLog.stabled = rd.Entries[len(rd.Entries)-1].Index
+		e := rd.Entries[len(rd.Entries)-1]
+		rn.Raft.RaftLog.stableTo(e.Index, e.Term)
 	}
 	// 更新已经commit且交给上层应用了的log index
 	if len(rd.CommittedEntries) != 0 {

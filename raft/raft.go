@@ -18,6 +18,7 @@ import (
 	"errors"
 	"math/rand"
 
+	"github.com/pingcap-incubator/tinykv/log"
 	pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 )
@@ -192,6 +193,9 @@ func newRaft(c *Config) *Raft {
 		PendingConfIndex:    0, //3A
 	}
 
+	// 用于raftlog日志
+	r.RaftLog.id = c.ID
+
 	// 恢复初始状态？
 	if hs, cs, err := c.Storage.InitialState(); err == nil {
 		if len(cs.Nodes) != 0 {
@@ -228,15 +232,18 @@ func (r *Raft) sendAppend(to uint64) bool {
 	if flag == "copy" || flag == "all" {
 		// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
 	}
-	ents := r.RaftLog.findentries(process.Next, r.RaftLog.LastIndex()+1)
+	ents, _ := r.RaftLog.findentries(process.Next, r.RaftLog.LastIndex()+1)
+	if len(ents) == 0 {
+		return true
+	}
+
 	for i := range ents {
 		msg.Entries = append(msg.Entries, &ents[i])
 	}
 	msg.Commit = r.RaftLog.committed
 	r.msgs = append(r.msgs, msg)
-	if flag == "copy" || flag == "all" {
-		DPrintf("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
-	}
+	log.Infof("Node:%d sendappend %v", r.id, ltoa(r.RaftLog))
+	log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
 	return true
 }
 
@@ -746,7 +753,8 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	lastindex := m.Index + uint64(len(m.Entries))
 	r.RaftLog.commitTo(min(lastindex, m.Commit))
 	// 打印当前日志情况
-	ltoa(r.RaftLog)
+	ents := ltoa(r.RaftLog)
+	log.Infof("Node:%d %v", r.id, ents)
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
 	// 成功的话，返回index+1，作为下一轮的nextIndex
 	msg.Index = r.RaftLog.LastIndex()
@@ -761,6 +769,11 @@ func (r *Raft) handleEntries(ents ...*pb.Entry) {
 	var comflictindex uint64 = None
 	for _, e := range ents {
 		if !r.isLogmatch(e.Index, e.Term) {
+			if e.Index <= r.RaftLog.LastIndex() {
+				t, _ := r.RaftLog.Term(e.Index)
+				log.Infof("found conflict at index %d [existing term: %d, conflicting term: %d]",
+					e.Index, t, e.Term)
+			}
 			comflictindex = e.Index
 			break
 		}
@@ -775,7 +788,10 @@ func (r *Raft) handleEntries(ents ...*pb.Entry) {
 
 // 日志匹配
 func (r *Raft) isLogmatch(index uint64, term uint64) bool {
-	logterm, _ := r.RaftLog.Term(index)
+	logterm, err := r.RaftLog.Term(index)
+	if err != nil {
+		return false
+	}
 	return logterm == term
 }
 

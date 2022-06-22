@@ -54,6 +54,7 @@ type RaftLog struct {
 	// (Used in 2C)
 	pendingSnapshot *pb.Snapshot
 
+	id uint64 //
 	// Your Data Here (2A).
 }
 
@@ -102,18 +103,21 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	ents = l.findentries(l.applied+1, l.committed+1)
+	ents, _ = l.findentries(l.applied+1, l.committed+1)
 	return ents
 }
 
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
-	if len(l.entries) == 0 {
-		lastindex, _ := l.storage.LastIndex()
-		return lastindex
+	if i, ok := l.unstableLastIndex(); ok {
+		return i
 	}
-	return l.entries[len(l.entries)-1].Index
+	lastindex, err := l.storage.LastIndex()
+	if err != nil {
+		panic(err)
+	}
+	return lastindex
 }
 
 // 最后的entry的term
@@ -126,18 +130,91 @@ func (l *RaftLog) isUpToDate(index uint64, term uint64) bool {
 	return term > l.LastTerm() || (term == l.LastTerm() && index >= l.LastIndex())
 }
 
+func (l *RaftLog) unstableLastIndex() (uint64, bool) {
+	if len(l.entries) != 0 {
+		return l.entries[len(l.entries)-1].Index, true
+	}
+	if l.pendingSnapshot != nil {
+		return l.pendingSnapshot.Metadata.Index, true
+	}
+	return 0, false
+}
+
+func (l *RaftLog) FirstIndex() uint64 {
+	if l.pendingSnapshot != nil {
+		return l.pendingSnapshot.Metadata.Index + 1
+	}
+	index, err := l.storage.FirstIndex()
+	if err != nil {
+		panic(err)
+	}
+	return index
+}
+
+func (l *RaftLog) unstableTerm(i uint64) (uint64, bool) {
+	if i <= l.stabled {
+		if l.pendingSnapshot != nil && l.pendingSnapshot.Metadata.Index == i {
+			return l.pendingSnapshot.Metadata.Term, true
+		}
+		return 0, false
+	}
+
+	last, ok := l.unstableLastIndex()
+	if !ok {
+		return 0, false
+	}
+	if i > last {
+		return 0, false
+	}
+
+	return l.entries[i-l.stabled-1].Term, true
+}
+
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
 	// 有未persist的snapshot
+	// lastindex := l.LastIndex()
+	// if i > lastindex {
+	// 	return 0, fmt.Errorf("index out of range")
+	// }
+	// if i > l.stabled {
+	// 	return l.entries[i-l.entries[0].Index].Term, nil
+	// }
+	// return l.storage.Term(i)
+	dummyindex := l.FirstIndex() - 1
 	lastindex := l.LastIndex()
-	if i > lastindex {
-		return 0, fmt.Errorf("index out of range")
+	// log.Infof("dummyindex:%d lastindex:%d i:%d stable:%d", dummyindex, lastindex, i, l.stabled)
+	if i < dummyindex || i > lastindex {
+		log.Infof("index out of range")
+		return 0, nil
 	}
-	if i > l.stabled {
-		return l.entries[i-l.entries[0].Index].Term, nil
+
+	if t, ok := l.unstableTerm(i); ok {
+		return t, nil
 	}
-	return l.storage.Term(i)
+
+	// last, ok := l.unstableLastIndex()
+	// if l.stabled < i && i <= last && ok {
+	// 	return l.entries[i-l.stabled-1].Term, nil
+	// }
+	//
+	// if i <= l.stabled {
+	// 	// 刚好是新来的snap
+	// 	if l.pendingSnapshot != nil && l.pendingSnapshot.Metadata.Index == i {
+	// 		return l.pendingSnapshot.Metadata.Term, nil
+	// 	}
+	// }
+
+	term, err := l.storage.Term(i)
+	if err != nil {
+		if err == ErrCompacted || err == ErrUnavailable {
+			return 0, err
+		}
+		log.Infof("Node:%d dummyindex:%d lastindex:%d i:%d stable:%d", l.id, dummyindex, lastindex, i, l.stabled)
+		panic(err)
+	}
+	return term, nil
 }
 
 func (l *RaftLog) appliedTo(i uint64, id uint64) {
@@ -150,27 +227,87 @@ func (l *RaftLog) appliedTo(i uint64, id uint64) {
 	l.applied = i
 }
 
+func (l *RaftLog) checkoutofbound(lo, hi uint64) error {
+	// 区间判定
+	if lo > hi {
+		log.Panicf("invalid range:lo %d and hi %d", lo, hi)
+	}
+
+	if lo < l.FirstIndex() {
+		return ErrCompacted
+	}
+
+	if hi > l.LastIndex()+1 {
+		log.Panicf("illegal slice bound[%d,%d) out of bound[%d,%d]", lo, hi, l.FirstIndex(), l.LastIndex())
+	}
+	return nil
+}
+
+// 获取在非stable的entries
+func (l *RaftLog) findUnstableentries(lo, hi uint64) []pb.Entry {
+	if lo > hi {
+		log.Panicf("Node:%d invalid unstable slice %d > %d", lo, hi)
+	}
+	upper := l.stabled + 1 + uint64(len(l.entries))
+	if lo <= l.stabled || hi > upper {
+		log.Panicf("Node:%d invalid unstable slice [%d,%d) out of bound[%d,%d]", lo, hi, l.stabled+1, upper)
+	}
+	return l.entries[lo-l.stabled-1 : hi-l.stabled-1]
+}
+
 // 获得相应区间的entries
-func (l *RaftLog) findentries(lo uint64, hi uint64) []pb.Entry {
+func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
+
+	err := l.checkoutofbound(lo, hi)
+	if err != nil {
+		return nil, err
+	}
+	if lo == hi {
+		return nil, nil
+	}
+
 	var ents []pb.Entry
 	// 如果有一部分在storage里面，先找那一部分
 	if lo <= l.stabled {
-		stable_ents, _ := l.storage.Entries(lo, min(hi, l.stabled+1))
-		ents = append(ents, stable_ents...)
+		log.Infof("Node:%d lo:%d hi:%d stable:%d", l.id, lo, hi, l.stabled)
+		stable_ents, err := l.storage.Entries(lo, min(hi, l.stabled+1))
+		if err != nil {
+			if err == ErrCompacted {
+				return nil, err
+			} else if err == ErrUnavailable {
+				log.Panicf("entries[%d:%d) is unavailable from storage", lo, min(hi, l.stabled+1))
+			}
+			log.Panicf("lo:%d hi:%d stable:%d", lo, hi, l.stabled)
+		}
+		// ents = append(ents, stable_ents...)
+		// 比复制更快
+		ents = stable_ents
 	}
 	// 有未unstabled的部分
 	if hi > l.stabled+1 {
-		firstindex := l.entries[0].Index
-		ents = append(ents, l.entries[max(l.stabled+1, lo)-firstindex:hi-firstindex]...)
+		// firstindex := l.entries[0].Index
+		unstable_ents := l.findUnstableentries(max(lo, l.stabled+1), hi)
+		if len(ents) > 0 {
+			combined := make([]pb.Entry, len(ents)+len(unstable_ents))
+			n := copy(combined, ents)
+			copy(combined[n:], unstable_ents)
+			ents = combined
+		} else {
+			ents = unstable_ents
+		}
+		// ents = append(ents, l.entries[max(l.stabled+1, lo)-firstindex:hi-firstindex]...)
 	}
 	if flag == "copy" || flag == "all" {
 		// DPrintf("log.go line 101 ents:%d", len(ents))
 	}
-	return ents
+	return ents, nil
 }
 
 // 加入新的entry
 func (l *RaftLog) AppendEntries(ents ...*pb.Entry) {
+	if len(ents) == 0 {
+		return
+	}
 	start := ents[0].Index
 	l.stabled = min(l.stabled, start-1)
 	// 如果当前的RaftLog.entries是空，或者非空但是start是刚好是下一个
@@ -192,10 +329,26 @@ func (l *RaftLog) AppendEntries(ents ...*pb.Entry) {
 func (l *RaftLog) commitTo(commit uint64) {
 	if l.committed < commit {
 		if commit > l.LastIndex() {
-			log.Fatalf("To commit log index > LastIndex")
+			log.Fatalf("Node:%d To commit log index:%d > LastIndex:%d", l.id, commit, l.LastIndex())
 		}
 		l.committed = commit
 	}
+}
+
+func (l *RaftLog) stableTo(stable, term uint64) {
+	st, err := l.Term(stable)
+	if err != nil {
+		// 出错应该是，这一块log已经删掉了，已经应用了
+		return
+	}
+
+	if st == term && stable > l.stabled {
+		l.entries = l.entries[stable-l.stabled:]
+		l.stabled = stable
+		// 是否收缩entry
+		//
+	}
+
 }
 
 // 某个index之后，是否还有已经 commit 的 entries
@@ -210,15 +363,15 @@ func (l *RaftLog) hasEntriesSince(index uint64) bool {
 }
 
 // 返回某个index后的entries
-func (l *RaftLog) entriesSince(index uint64) []pb.Entry {
-	firstindex, _ := l.storage.FirstIndex()
-	offset := max(index+1, firstindex)
-	high := l.committed + 1
-	if high > offset {
-		if flag == "copy" || flag == "all" {
-			DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
-		}
-		return l.findentries(offset, high)
-	}
-	return []pb.Entry{}
-}
+// func (l *RaftLog) entriesSince(index uint64) []pb.Entry {
+// 	firstindex, _ := l.storage.FirstIndex()
+// 	offset := max(index+1, firstindex)
+// 	high := l.committed + 1
+// 	if high > offset {
+// 		if flag == "copy" || flag == "all" {
+// 			DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
+// 		}
+// 		return l.findentries(offset, high)
+// 	}
+// 	return []pb.Entry{}
+// }
