@@ -255,6 +255,13 @@ func (l *RaftLog) findUnstableentries(lo, hi uint64) []pb.Entry {
 	return l.entries[lo-l.stabled-1 : hi-l.stabled-1]
 }
 
+func (l *RaftLog) appentries(i uint64) ([]pb.Entry, error) {
+	if i > l.LastIndex() {
+		return nil, nil
+	}
+	return l.findentries(i, l.LastIndex()+1)
+}
+
 // 获得相应区间的entries
 func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
 
@@ -301,6 +308,19 @@ func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
 		// DPrintf("log.go line 101 ents:%d", len(ents))
 	}
 	return ents, nil
+}
+
+// 返回snap
+func (l *RaftLog) findSnap() (pb.Snapshot, error) {
+	if l.pendingSnapshot != nil {
+		return *l.pendingSnapshot, nil
+	}
+	return l.storage.Snapshot()
+}
+
+// 判断是否有snap
+func (l *RaftLog) hasPendingSnapshot() bool {
+	return l.pendingSnapshot != nil && !IsEmptySnap(l.pendingSnapshot)
 }
 
 // 加入新的entry
@@ -375,3 +395,20 @@ func (l *RaftLog) hasEntriesSince(index uint64) bool {
 // 	}
 // 	return []pb.Entry{}
 // }
+
+func (l *RaftLog) matchTerm(i, term uint64) bool {
+	t, err := l.Term(i)
+	if err != nil {
+		return false
+	}
+	return t == term
+}
+
+func (l *RaftLog) restore(s *pb.Snapshot) {
+	log.Infof("log [%v] starts to restore snapshot [index: %d, term: %d]", l, s.Metadata.Index, s.Metadata.Term)
+	// 这里不能用commitTo
+	l.committed = s.Metadata.Index
+	l.stabled = s.Metadata.Index
+	l.entries = []pb.Entry{}
+	l.pendingSnapshot = s
+}
