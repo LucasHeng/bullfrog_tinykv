@@ -103,8 +103,21 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	ents, _ = l.findentries(l.applied+1, l.committed+1)
-	return ents
+	left := max(l.applied+1, l.FirstIndex())
+	if l.committed+1 > left {
+		ents, err := l.findentries(left, l.committed+1)
+		if err != nil {
+			log.Panicf("Node:%d unexpected error when getting unapplied entries %v", l.id, err)
+		}
+		return ents
+	}
+	// ents, _ = l.findentries(l.applied+1, l.committed+1)
+	return nil
+}
+
+func (l *RaftLog) hasNextEnts() bool {
+	left := max(l.applied+1, l.FirstIndex())
+	return l.committed+1 > left
 }
 
 // LastIndex return the last index of the log entries
@@ -356,9 +369,13 @@ func (l *RaftLog) commitTo(commit uint64) {
 }
 
 func (l *RaftLog) stableTo(stable, term uint64) {
-	st, err := l.Term(stable)
-	if err != nil {
-		// 出错应该是，这一块log已经删掉了，已经应用了
+	// st, err := l.Term(stable)
+	// if err != nil {
+	// 	// 出错应该是，这一块log已经删掉了，已经应用了
+	// 	return
+	// }
+	st, ok := l.unstableTerm(stable)
+	if !ok {
 		return
 	}
 
@@ -367,8 +384,20 @@ func (l *RaftLog) stableTo(stable, term uint64) {
 		l.stabled = stable
 		// 是否收缩entry
 		//
+		// l.shrinkEntries()
 	}
 
+}
+
+func (l *RaftLog) shrinkEntries() {
+	const lenMulti = 2
+	if len(l.entries) == 0 {
+		l.entries = nil
+	} else if len(l.entries)*lenMulti < cap(l.entries) {
+		newEntries := make([]pb.Entry, len(l.entries))
+		copy(newEntries, l.entries)
+		l.entries = newEntries
+	}
 }
 
 // 某个index之后，是否还有已经 commit 的 entries

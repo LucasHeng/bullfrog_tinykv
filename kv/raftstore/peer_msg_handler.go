@@ -96,6 +96,32 @@ func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry
 	return err
 }
 
+func (d *peerMsgHandler) FindProposal(e *eraftpb.Entry) (*proposal, bool) {
+	if len(d.proposals) != 0 {
+		proposal := d.proposals[0]
+		// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+		for proposal.index < e.Index {
+			proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+			d.proposals = d.proposals[1:]
+			if len(d.proposals) == 0 {
+				// 没有proposal,结束这个
+				return nil, false
+			}
+			proposal = d.proposals[0]
+		}
+		if proposal.index == e.Index {
+			if proposal.term != e.Term {
+				// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+				NotifyStaleReq(e.Index, proposal.cb)
+				d.proposals = d.proposals[1:]
+				return nil, false
+			}
+			return proposal, true
+		}
+	}
+	return nil, false
+}
+
 func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
 	// 解码出raftcmd
 	msg := &raft_cmdpb.RaftCmdRequest{}
@@ -104,69 +130,158 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		panic(err)
 	}
 	if len(msg.Requests) != 0 {
+		resp := &raft_cmdpb.RaftCmdResponse{Header: &raft_cmdpb.RaftResponseHeader{}}
+		proposal, ok := d.FindProposal(e)
 		for _, req := range msg.Requests {
 			switch req.CmdType {
 			case raft_cmdpb.CmdType_Invalid:
 			case raft_cmdpb.CmdType_Get:
+				// get应该返回当前值
+				if !ok {
+					continue
+				}
+				d.peerStorage.applyState.AppliedIndex = e.Index
+				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+				kvWB.Reset()
+				val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Get,
+					Get:     &raft_cmdpb.GetResponse{Value: val},
+				})
 			case raft_cmdpb.CmdType_Put:
 				kvWB.SetCF(req.Put.Cf, req.Put.GetKey(), req.Put.GetValue())
+				if !ok {
+					continue
+				}
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Put,
+					Put:     &raft_cmdpb.PutResponse{},
+				})
 			case raft_cmdpb.CmdType_Delete:
 				kvWB.DeleteCF(req.Delete.Cf, req.Delete.GetKey())
+				if !ok {
+					continue
+				}
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Delete,
+					Delete:  &raft_cmdpb.DeleteResponse{},
+				})
 			case raft_cmdpb.CmdType_Snap:
+				if !ok {
+					continue
+				}
+				d.peerStorage.applyState.AppliedIndex = e.Index
+				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+				kvWB.Reset()
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Snap,
+					Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
+				})
+				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+				proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
 			}
 
-			// 回复
-			if len(d.proposals) != 0 {
-				proposal := d.proposals[0]
-				// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
-				for proposal.index < e.Index {
-					proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
-					d.proposals = d.proposals[1:]
-					if len(d.proposals) == 0 {
-						// 没有proposal,结束这个
-						return
-					}
-					proposal = d.proposals[0]
-				}
-				if proposal.index == e.Index {
-					if proposal.term != e.Term {
-						// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
-						NotifyStaleReq(e.Index, proposal.cb)
-						d.proposals = d.proposals[1:]
-						return
-					}
-					resp := &raft_cmdpb.RaftCmdResponse{Header: &raft_cmdpb.RaftResponseHeader{}}
+			//	// 回复
+			//	if len(d.proposals) != 0 {
+			//		proposal := d.proposals[0]
+			//		// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+			//		for proposal.index < e.Index {
+			//			proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+			//			d.proposals = d.proposals[1:]
+			//			if len(d.proposals) == 0 {
+			//				// 没有proposal,结束这个
+			//				return
+			//			}
+			//			proposal = d.proposals[0]
+			//		}
+			//		if proposal.index == e.Index {
+			//			if proposal.term != e.Term {
+			//				// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+			//				NotifyStaleReq(e.Index, proposal.cb)
+			//				d.proposals = d.proposals[1:]
+			//				return
+			//			}
 
-					switch req.CmdType {
-					case raft_cmdpb.CmdType_Invalid:
-					case raft_cmdpb.CmdType_Get:
-						// get应该返回当前值
-						d.peerStorage.applyState.AppliedIndex = e.Index
-						kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-						kvWB.WriteToDB(d.peerStorage.Engines.Kv)
-						kvWB.Reset()
-						val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
-						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Get, Get: &raft_cmdpb.GetResponse{
-							Value: val,
-						}}}
-					case raft_cmdpb.CmdType_Put:
-						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Put, Put: &raft_cmdpb.PutResponse{}}}
-					case raft_cmdpb.CmdType_Delete:
-						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Delete, Delete: &raft_cmdpb.DeleteResponse{}}}
-					case raft_cmdpb.CmdType_Snap:
-						d.peerStorage.applyState.AppliedIndex = e.Index
-						kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
-						kvWB.WriteToDB(d.peerStorage.Engines.Kv)
-						kvWB.Reset()
-						resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
-						proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
-					}
-					// 对于request只有一个的情况
-					proposal.cb.Done(resp)
-					d.proposals = d.proposals[1:]
-				}
-			}
+			//			switch req.CmdType {
+			//			case raft_cmdpb.CmdType_Invalid:
+			//			case raft_cmdpb.CmdType_Get:
+			//				// get应该返回当前值
+			//				d.peerStorage.applyState.AppliedIndex = e.Index
+			//				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+			//				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+			//				kvWB.Reset()
+			//				val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Get,
+			//					Get:     &raft_cmdpb.GetResponse{Value: val},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Get, Get: &raft_cmdpb.GetResponse{
+			//				//  	Value: val,
+			//				// }}}
+			//			case raft_cmdpb.CmdType_Put:
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Put,
+			//					Put:     &raft_cmdpb.PutResponse{},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Put, Put: &raft_cmdpb.PutResponse{}}}
+			//			case raft_cmdpb.CmdType_Delete:
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Delete,
+			//					Delete:  &raft_cmdpb.DeleteResponse{},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Delete, Delete: &raft_cmdpb.DeleteResponse{}}}
+			//			case raft_cmdpb.CmdType_Snap:
+			//				d.peerStorage.applyState.AppliedIndex = e.Index
+			//				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+			//				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+			//				kvWB.Reset()
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Snap,
+			//					Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+			//				proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+			//			}
+			//			// // 对于request只有一个的情况
+			//			// d.peerStorage.Engines.Kproposal.cb.Done(resp)
+			//			// d.proposals = d.proposals[1:]
+			//		}
+			//	}
 		}
+		if ok {
+			proposal.cb.Done(resp)
+			d.proposals = d.proposals[1:]
+		}
+		// // d.proposals[0].cb.Done(resp)
+		// 先应用了，回复看是否有proposal
+		// if len(d.proposals) != 0 {
+		// 	proposal := d.proposals[0]
+		// 	// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+		// 	for proposal.index < e.Index {
+		// 		proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+		// 		d.proposals = d.proposals[1:]
+		// 		if len(d.proposals) == 0 {
+		// 			// 没有proposal,结束这个
+		// 			return
+		// 		}
+		// 		proposal = d.proposals[0]
+		// 	}
+		// 	if proposal.index == e.Index {
+		// 		if proposal.term != e.Term {
+		// 			// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+		// 			NotifyStaleReq(e.Index, proposal.cb)
+		// 			d.proposals = d.proposals[1:]
+		// 			return
+		// 		}
+		// 		proposal.cb.Done(resp)
+		// 		if hassnap {
+		// 			proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+		// 		}
+		// 		d.proposals = d.proposals[1:]
+		// 	}
+		// }
 	}
 }
 
