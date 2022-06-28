@@ -146,10 +146,16 @@ func (c *Cluster) Shutdown() {
 		c.simulator.StopStore(storeID)
 	}
 	for _, engine := range c.engines {
-		engine.Close()
+		err := engine.Close()
+		if err != nil {
+			panic(err)
+		}
 	}
 	for _, dir := range c.dirs {
-		os.RemoveAll(dir)
+		err := os.RemoveAll(dir)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 

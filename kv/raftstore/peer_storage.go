@@ -376,7 +376,11 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 	ps.applyState.AppliedIndex = snapMeta.Index
 	ps.applyState.TruncatedState.Index = snapMeta.Index
 	ps.applyState.TruncatedState.Term = snapMeta.Term
+	ps.raftState.HardState.Commit = snapshot.Metadata.Index
+	ps.raftState.HardState.Term = snapshot.Metadata.Term
+	ps.raftState.HardState.Vote = 0
 	kvWB.SetMeta(meta.ApplyStateKey(snapData.Region.Id), ps.applyState)
+	//raftWB.SetMeta(meta.RaftStateKey(snapData.Region.GetId()), ps.raftState)
 	// 更新 snapState
 	ps.snapState.StateType = snap.SnapState_Applying
 

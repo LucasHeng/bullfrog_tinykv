@@ -162,7 +162,7 @@ type Raft struct {
 	// (Used in 3A conf change)
 	PendingConfIndex uint64
 
-	SendSnapShot           map[uint64]int
+	//SendSnapShot           map[uint64]int
 	PendingSnapshotTimeOut int
 }
 
@@ -191,12 +191,12 @@ func newRaft(c *Config) *Raft {
 		leadTransferee:         0, //3A
 		PendingConfIndex:       0, //3A
 		PendingSnapshotTimeOut: 10,
-		SendSnapShot:           make(map[uint64]int),
+		//SendSnapShot:           make(map[uint64]int),
 	}
 	// 恢复初始状态？
 	if hs, cs, err := c.Storage.InitialState(); err == nil {
 		// c.peers只用于测试，lab2b用的是 cs.Nodes
-		if len(cs.Nodes) != 0 {
+		if c.peers == nil {
 			c.peers = cs.Nodes
 		}
 		r.loadState(hs)
@@ -254,11 +254,11 @@ func (r *Raft) sendAppend(to uint64) bool {
 
 // 先实现最简单的一种：直接发送整个snapshot
 func (r *Raft) sendSnapshot(to uint64) {
-	ToCPrint("[sendSnapshot] %v send to %v", r.id, to)
-	if _, ok := r.SendSnapShot[to]; ok {
-		ToCPrint("[sendSnapshot] %v already sended to %v, directly return", r.id, to)
-		return
-	}
+	//fmt.Printf("[sendSnapshot] %v send to %v\n", r.id, to)
+	//if _, ok := r.SendSnapShot[to]; ok {
+	//	ToCPrint("[sendSnapshot] %v already sended to %v, directly return", r.id, to)
+	//	return
+	//}
 	snap, err := r.RaftLog.storage.Snapshot()
 	if err != nil {
 		fmt.Println("[get snapshot error]:", err)
@@ -271,8 +271,9 @@ func (r *Raft) sendSnapshot(to uint64) {
 		Snapshot: &snap,
 		Term:     r.Term,
 	})
-	r.Prs[to].Next = snap.Metadata.Index
-	r.SendSnapShot[to] = 0
+	// meta.Index 是db中保存的 RaftApplyState的信息，这个已经确保被snapshot的follower应用了，所以next要加一
+	r.Prs[to].Next = snap.Metadata.Index + 1
+	//r.SendSnapShot[to] = 0
 }
 
 func (r *Raft) DebugEntries(ents []*pb.Entry) {
@@ -296,7 +297,7 @@ func (r *Raft) sendHeartbeat(to uint64) {
 // tick advances the internal logical clock by a single tick.
 func (r *Raft) tick() {
 	// Your Code Here (2A).
-	r.tickSnap()
+	//r.tickSnap()
 	switch r.State {
 	case StateFollower, StateCandidate:
 		r.tickElection()
@@ -305,15 +306,15 @@ func (r *Raft) tick() {
 	}
 }
 
-func (r *Raft) tickSnap() {
-	for node, _ := range r.SendSnapShot {
-		r.SendSnapShot[node]++
-		if r.SendSnapShot[node] >= r.PendingSnapshotTimeOut {
-			ToCPrint("[tickSnap] pending snapshot time out ,delete ")
-			delete(r.SendSnapShot, node)
-		}
-	}
-}
+//func (r *Raft) tickSnap() {
+//	for node, _ := range r.SendSnapShot {
+//		r.SendSnapShot[node]++
+//		if r.SendSnapShot[node] >= r.PendingSnapshotTimeOut {
+//			ToCPrint("[tickSnap] pending snapshot time out ,delete ")
+//			delete(r.SendSnapShot, node)
+//		}
+//	}
+//}
 
 func (r *Raft) tickElection() {
 	r.electionElapsed++
@@ -434,8 +435,21 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 	for i := range ents {
 		ents[i].Term = r.Term
 		ents[i].Index = lastindex + 1 + uint64(i)
-		r.Prs[r.id].Match = ents[i].Index
-		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		if ents[i].EntryType == pb.EntryType_EntryConfChange {
+			if r.PendingConfIndex != None {
+				continue
+			}
+			r.PendingConfIndex = ents[i].Index
+		}
+		if _, ok := r.Prs[r.id]; ok {
+			r.Prs[r.id].Match = ents[i].Index
+			r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		} else {
+			r.Prs[r.id] = &Progress{
+				Match: ents[i].Index,
+				Next:  ents[i].Index + 1,
+			}
+		}
 	}
 	r.RaftLog.AppendEntries(ents...)
 
@@ -466,6 +480,9 @@ func (r *Raft) updateCommit() {
 // on `eraftpb.proto` for what msgs should be handled
 func (r *Raft) Step(m pb.Message) error {
 	// Your Code Here (2A).
+	if _, ok := r.Prs[r.id]; !ok && len(r.Prs) != 0 {
+		return nil
+	}
 	switch r.State {
 	case StateFollower:
 		r.stepFollower(m)
@@ -481,6 +498,7 @@ func (r *Raft) Step(m pb.Message) error {
 func (r *Raft) stepFollower(m pb.Message) {
 	switch m.GetMsgType() {
 	case pb.MessageType_MsgHup:
+		fmt.Printf("%v now have %v\n", r.id, r.Prs)
 		r.hup()
 	case pb.MessageType_MsgPropose:
 		if r.Lead != None {
@@ -518,8 +536,15 @@ func (r *Raft) hup() {
 		// 已经是leader，则不需要竞选
 		return
 	}
+	if _, ok := r.Prs[r.id]; !ok {
+		return
+	}
 	// 如果不是leader，先变成candidate，再选举
 	r.becomeCandidate()
+	if len(r.Prs) == 1 {
+		r.becomeLeader()
+		return
+	}
 	for id := range r.Prs {
 		// 给所有人发请求选票的信息
 		if id != r.id {
@@ -684,17 +709,23 @@ func (r *Raft) stepLeader(m pb.Message) {
 
 // 处理 leader transfer
 func (r *Raft) handleTransferLeader(m pb.Message) {
-	// 如果是要求转移给自己，就直接返回
+	// 如果是要求转移给自己或者已经存在，就直接返回
 	if m.From == r.id {
 		return
 	}
 	// 检查是否存在集群中
-	if _, ok := r.Prs[m.From]; !ok {
+	pr, ok := r.Prs[m.From]
+	if !ok {
 		return
 	}
 	r.leadTransferee = m.From
 	// 直接发送 append 消息，然后在 response 里面处理
-	r.sendAppend(m.From)
+	if pr.Match == r.RaftLog.LastIndex() {
+		r.sendTimeOutNow(m.From)
+	} else {
+		//fmt.Println(pr.Match, r.RaftLog.LastIndex())
+		r.sendAppend(m.From)
+	}
 }
 
 // 处理appendResponse
@@ -717,7 +748,11 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		if m.Reject && m.LogTerm != None {
 			// 拒绝了
 			var matchTerm uint64
-			matchindex, matchTerm = r.RaftLog.Findconflictbyterm(m.Index, m.LogTerm)
+			//var err error
+			matchindex, matchTerm, _ = r.RaftLog.Findconflictbyterm(m.Index, m.LogTerm)
+			//if err == ErrCompacted {
+			//	r.sendSnapshot(m.From)
+			//}
 			ToBPrint("[response] %v reject %v, find match index %v, MatchLogTerm : %v", m.From, m.To, matchindex, matchTerm)
 		} else if m.Reject && m.LogTerm == None {
 			if matchindex > 0 {
@@ -728,19 +763,23 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 			progress.Next = matchindex + 1
 			r.sendAppend(m.From)
 		} else {
+			//fmt.Printf("from %v, index : %v\n",m.From, m.Index)
 			progress.Next = matchindex + 1
 			progress.Match = matchindex
-			if _, ok := r.SendSnapShot[m.From]; ok {
-				ToCPrint("[receive response] delete sendSnapshot %v", m.From)
-				delete(r.SendSnapShot, m.From)
-			}
-			if r.leadTransferee != 0 {
-				r.updateCommit()
-				r.sendTimeOutNow(m.From)
-				return
-			}
+			//if _, ok := r.SendSnapShot[m.From]; ok {
+			//	ToCPrint("[receive response] delete sendSnapshot %v", m.From)
+			//	delete(r.SendSnapShot, m.From)
+			//}
+			//if r.leadTransferee != 0 {
+			//	r.updateCommit()
+			//	r.sendTimeOutNow(m.From)
+			//	return
+			//}
 		}
 		r.updateCommit()
+		if m.From == r.leadTransferee && m.Index == r.RaftLog.LastIndex() {
+			r.sendTimeOutNow(m.From)
+		}
 	}
 }
 
@@ -771,21 +810,21 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	r.becomeFollower(m.Term, m.From)
 	// 如果发送的message的消息早于commit，则这个消息应该拒绝，因为commit的entry不应该修改
 	// 回复的Index应该是已经匹配的Index
-	//if m.Index < r.RaftLog.committed {
-	//	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
-	//	msg.Index = r.RaftLog.committed
-	//	msg.LogTerm = None
-	//	r.msgs = append(r.msgs, msg)
-	//	if ToB {
-	//		ToBPrint("[%v %v handleAppendEntries] reject append because m.Index %v < r.RaftLog.committed %v", r.State, r.id, m.Index, r.RaftLog.committed)
-	//	}
-	//	return
-	//}
+	if m.Index < r.RaftLog.committed {
+		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
+		msg.Index = r.RaftLog.committed
+		msg.LogTerm = None
+		r.msgs = append(r.msgs, msg)
+		if ToB {
+			SplitPrint("[%v %v handleAppendEntries] reject append because m.Index %v < r.RaftLog.committed %v", r.State, r.id, m.Index, r.RaftLog.committed)
+		}
+		return
+	}
 	if !r.isLogmatch(m.Index, m.LogTerm) {
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
 		hintindex := min(m.Index, r.RaftLog.LastIndex())
 		// 优化一次找一个为一次找多个term
-		hintindex, hintterm := r.RaftLog.Findconflictbyterm(hintindex, m.LogTerm)
+		hintindex, hintterm, _ := r.RaftLog.Findconflictbyterm(hintindex, m.LogTerm)
 		if ToB {
 			ToBPrint("[%v %v handleAppendEntries] reject, hintIndex:%v,hintTerm:%v, msg.Index:%v,msg.LogTerm:%v", r.State, r.id, hintindex, hintterm, msg.Index, msg.LogTerm)
 			r.DebugEntries(msg.Entries)
@@ -848,20 +887,21 @@ func (r *Raft) isLogmatch(index uint64, term uint64) bool {
 
 // 找到对应的term的index，小于等于对应term，因为这个对应的index的term没有匹配上，
 // 那么就应该是：往前走的term应该都是小于等于term
-func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64) {
+func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64, error) {
 	conflictindex := index
 	// 最少要发committed之前的
 	for conflictindex > 0 {
 		tmpterm, err := l.Term(conflictindex)
 		if tmpterm <= term || err != nil {
 			ToBPrint("[Findconflictbyterm err] %v", err)
-			return conflictindex, tmpterm
+			return conflictindex, tmpterm, err
 		} else {
 			conflictindex--
 		}
 	}
-	term, _ = l.Term(conflictindex)
-	return conflictindex, term
+	var err error
+	term, err = l.Term(conflictindex)
+	return conflictindex, term, err
 }
 
 // artbeat handle Heartbeat RPC request
@@ -932,7 +972,7 @@ func (r *Raft) sendSnapResp(to uint64) {
 		Index:   r.RaftLog.LastIndex(),
 	}
 	r.msgs = append(r.msgs, msg)
-	ToCPrint("[sendSnapResp] %v send snap resp to %v, msg : %v", r.id, to, msg)
+	//fmt.Printf("[sendSnapResp] %v send snap resp to %v, msg : %v\n", r.id, to, msg)
 }
 
 // addNode add a new node to raft group

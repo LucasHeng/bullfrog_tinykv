@@ -334,7 +334,8 @@ func TestCommitWithoutNewTermEntry2AB(t *testing.T) {
 
 	sm := tt.peers[1].(*Raft)
 	if sm.RaftLog.committed != 1 {
-		t.Errorf("committed = %d, want %d", sm.RaftLog.committed, 1)
+		t.Errorf(
+			"committed = %d, want %d", sm.RaftLog.committed, 1)
 	}
 
 	// network recovery

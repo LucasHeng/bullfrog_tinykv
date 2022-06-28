@@ -223,7 +223,7 @@ func (rn *RawNode) Advance(rd Ready) {
 	// 更新已经commit且交给上层应用了的log index
 	if len(rd.CommittedEntries) != 0 {
 		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
-		rn.Raft.RaftLog.applied = rn.commitSinceIndex
+		rn.Raft.RaftLog.applied = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 	}
 	// 可能需要更新 raft 的 compact 状态
 	rn.Raft.RaftLog.maybeCompact()

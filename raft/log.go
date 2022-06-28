@@ -62,6 +62,10 @@ type RaftLog struct {
 // to the state that it just commits and applies the latest snapshot.
 func newLog(storage Storage) *RaftLog {
 	// Your Code Here (2A).
+	hs, _, err := storage.InitialState()
+	if err != nil {
+		panic(err)
+	}
 	firstIndex, err := storage.FirstIndex()
 	if err != nil {
 		// 如果没有已提交日志，那么commitindex初始化为0
@@ -74,7 +78,7 @@ func newLog(storage Storage) *RaftLog {
 	entries, _ := storage.Entries(firstIndex, lastindex+1)
 	return &RaftLog{
 		storage:         storage,
-		committed:       firstIndex - 1,
+		committed:       hs.Commit,
 		applied:         firstIndex - 1,
 		stabled:         lastindex,
 		entries:         entries,
