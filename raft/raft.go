@@ -938,7 +938,7 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 	//非过期
 	r.becomeFollower(m.Term, m.From)
 	if r.restore(m.Snapshot) {
-		log.Infof("%x [commit: %d] restored snapshot [index: %d, term: %d]",
+		log.Infof("Node:%x [commit: %d] restored snapshot [index: %d, term: %d]",
 			r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
 		msg := pb.Message{
 			MsgType: pb.MessageType_MsgAppendResponse,

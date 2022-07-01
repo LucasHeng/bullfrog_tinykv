@@ -66,6 +66,17 @@ type Ready struct {
 	Messages []pb.Message
 }
 
+func (rd Ready) applyIndex() uint64 {
+	if rd.CommittedEntries != nil {
+		return rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
+	}
+	// 如果有snap
+	if rd.Snapshot.Metadata != nil && rd.Snapshot.Metadata.Index > 0 {
+		return rd.Snapshot.Metadata.Index
+	}
+	return None
+}
+
 // RawNode is a wrapper of Raft.
 type RawNode struct {
 	Raft *Raft
@@ -164,7 +175,7 @@ func (rn *RawNode) Ready() Ready {
 		rd.HardState = hs
 	}
 	// 是否有还未stable的entry
-	if len(rn.Raft.RaftLog.unstableEntries()) != 0 {
+	if rn.Raft.RaftLog.hasUnstableEntries() {
 		// 找到未stabled的entries
 		rd.Entries = rn.Raft.RaftLog.unstableEntries()
 		if flag == "copy" || flag == "all" {
@@ -172,11 +183,17 @@ func (rn *RawNode) Ready() Ready {
 		}
 	}
 	// 是否还有commit但是还未apply的entries
-	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
+	// if len(rn.Raft.RaftLog.nextEnts()) > 0 {
+	if rn.Raft.RaftLog.hasNextEnts() {
 		rd.CommittedEntries = rn.Raft.RaftLog.nextEnts()
 		if flag == "copy" || flag == "all" {
 			DPrintf("committedEntries: %v", rd.CommittedEntries)
 		}
+	}
+
+	// 是否有snao
+	if rn.Raft.RaftLog.hasPendingSnapshot() {
+		rd.Snapshot = *rn.Raft.RaftLog.pendingSnapshot
 	}
 	PrintReady(rd, rn.Raft.id)
 	// 是否有新的消息
@@ -209,18 +226,25 @@ func (rn *RawNode) HasReady() bool {
 	}
 
 	// 状态更新
-	if rn.Raft.softState() != rn.prevSS {
+	if !compareSS(rn.Raft.softState(), rn.prevSS) {
 		return true
 	}
 	if !isEmtpyHardState(rn.Raft.hardState()) && !compareHs(rn.Raft.hardState(), rn.prevHs) {
 		return true
 	}
 	// 有未持久的entries
-	if rn.Raft.RaftLog.LastIndex() > rn.Raft.RaftLog.stabled {
+	// if rn.Raft.RaftLog.LastIndex() > rn.Raft.RaftLog.stabled {
+	if rn.Raft.RaftLog.hasUnstableEntries() {
 		return true
 	}
 	// 有未应用的commit entry
-	if len(rn.Raft.RaftLog.nextEnts()) > 0 {
+	// if len(rn.Raft.RaftLog.nextEnts()) > 0 {
+	if rn.Raft.RaftLog.hasNextEnts() {
+		return true
+	}
+
+	// 有未持久化的snap
+	if rn.Raft.RaftLog.hasPendingSnapshot() {
 		return true
 	}
 	return false
@@ -246,9 +270,19 @@ func (rn *RawNode) Advance(rd Ready) {
 		rn.Raft.RaftLog.stableTo(e.Index, e.Term)
 	}
 	// 更新已经commit且交给上层应用了的log index
-	if len(rd.CommittedEntries) != 0 {
-		rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
-		rn.Raft.RaftLog.applied = rn.commitSinceIndex
+	// if len(rd.CommittedEntries) != 0 {
+	// 	rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
+	// 	rn.Raft.RaftLog.applied = rn.commitSinceIndex
+	// }
+	if rd.applyIndex() != None {
+		// rn.commitSinceIndex = rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
+		// 用applyTo去更新，会比较安全，不要直接修改
+		rn.Raft.RaftLog.appliedTo(rd.applyIndex(), rn.Raft.id)
+	}
+
+	// snap已经弄完了，该删除snap了
+	if !IsEmptySnap(&rd.Snapshot) {
+		rn.Raft.RaftLog.stableSnapTo(rd.Snapshot.Metadata.Index)
 	}
 }
 

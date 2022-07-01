@@ -100,6 +100,14 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 	return l.entries
 }
 
+// 是否有unstable entries
+func (l *RaftLog) hasUnstableEntries() bool {
+	if len(l.entries) == 0 {
+		return false
+	}
+	return true
+}
+
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
@@ -259,11 +267,12 @@ func (l *RaftLog) checkoutofbound(lo, hi uint64) error {
 // 获取在非stable的entries
 func (l *RaftLog) findUnstableentries(lo, hi uint64) []pb.Entry {
 	if lo > hi {
-		log.Panicf("Node:%d invalid unstable slice %d > %d", lo, hi)
+		log.Panicf("Node:%d invalid unstable slice %d > %d", l.id, lo, hi)
 	}
-	upper := l.stabled + 1 + uint64(len(l.entries))
+	// upper := l.stabled + 1 + uint64(len(l.entries))
+	upper := l.entries[0].Index + uint64(len(l.entries))
 	if lo <= l.stabled || hi > upper {
-		log.Panicf("Node:%d invalid unstable slice [%d,%d) out of bound[%d,%d]", lo, hi, l.stabled+1, upper)
+		log.Panicf("Node:%d invalid unstable slice [%d,%d) out of bound[%d,%d]", l.id, lo, hi, l.stabled+1, upper)
 	}
 	return l.entries[lo-l.stabled-1 : hi-l.stabled-1]
 }
@@ -389,6 +398,12 @@ func (l *RaftLog) stableTo(stable, term uint64) {
 
 }
 
+func (l *RaftLog) stableSnapTo(sindex uint64) {
+	if l.pendingSnapshot != nil && l.pendingSnapshot.Metadata.Index == sindex {
+		l.pendingSnapshot = nil
+	}
+}
+
 func (l *RaftLog) shrinkEntries() {
 	const lenMulti = 2
 	if len(l.entries) == 0 {
@@ -438,6 +453,7 @@ func (l *RaftLog) restore(s *pb.Snapshot) {
 	// 这里不能用commitTo
 	l.committed = s.Metadata.Index
 	l.stabled = s.Metadata.Index
-	l.entries = []pb.Entry{}
+	l.entries = nil
+	// l.entries = append(l.entries, pb.Entry{EntryType: pb.EntryType_EntryNormal, Term: s.Metadata.Term, Index: s.Metadata.Index})
 	l.pendingSnapshot = s
 }

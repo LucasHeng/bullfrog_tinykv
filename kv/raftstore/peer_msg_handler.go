@@ -52,11 +52,19 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	rd := d.RaftGroup.Ready()
 
 	// 处理ready,保存未持久的log然后应用commit
-	_, err := d.peerStorage.SaveReadyState(&rd)
+	result, err := d.peerStorage.SaveReadyState(&rd)
 
 	if err != nil {
 		// error处理
 		return
+	}
+
+	if result != nil && result.Region != nil {
+		d.peerStorage.SetRegion(result.Region)
+		d.ctx.storeMeta.Lock()
+		d.ctx.storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: result.Region})
+		d.ctx.storeMeta.regions[d.regionId] = d.Region()
+		d.ctx.storeMeta.Unlock()
 	}
 
 	if rd.SoftState != nil {
@@ -86,9 +94,9 @@ func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry
 	kvWB := &engine_util.WriteBatch{}
 	for _, e := range committedEntries {
 		d.HandleEntry(&e, kvWB)
-		// if d.stopped {
-		// 	return
-		// }
+		if d.stopped {
+			return nil
+		}
 	}
 	d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
 	kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
@@ -283,6 +291,23 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		// 	}
 		// }
 	}
+	// 可能是都有，所以不能else if
+	if msg.AdminRequest != nil {
+		areq := msg.GetAdminRequest()
+		switch areq.CmdType {
+		case raft_cmdpb.AdminCmdType_CompactLog:
+			log := areq.GetCompactLog()
+			// 修改applystate的trun
+			if log.GetCompactIndex() >= d.peerStorage.truncatedIndex() {
+				d.peerStorage.applyState.TruncatedState.Index = log.GetCompactIndex()
+				d.peerStorage.applyState.TruncatedState.Term = log.GetCompactTerm()
+				kvWB.SetMeta(meta.ApplyStateKey(d.Region().Id), d.peerStorage.applyState)
+				d.ScheduleCompactLog(log.GetCompactIndex())
+			}
+		default:
+			panic("unexist admincmd")
+		}
+	}
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
@@ -356,7 +381,7 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 	}
 	// Your Code Here (2B).
 	// 放入回调
-	if msg.AdminRequest == nil {
+	if msg.Requests != nil {
 		d.proposals = append(d.proposals, &proposal{
 			index: d.nextProposalIndex(),
 			term:  d.Term(),
@@ -369,6 +394,21 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			panic(err)
 		}
 		d.RaftGroup.Propose(data)
+	} else if msg.AdminRequest != nil {
+		d.proposeAdminRequest(msg, cb)
+	}
+}
+
+func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb *message.Callback) {
+	switch msg.AdminRequest.CmdType {
+	case raft_cmdpb.AdminCmdType_CompactLog:
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.Propose(data)
+	default:
+		panic("no such admin request")
 	}
 }
 
