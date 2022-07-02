@@ -266,9 +266,9 @@ func (r *Raft) sendAppend(to uint64) bool {
 			// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
 		}
 
-		if len(ents) == 0 {
-			return true
-		}
+		// if len(ents) == 0 {
+		// 	return true
+		// }
 
 		for i := range ents {
 			msg.Entries = append(msg.Entries, &ents[i])

@@ -87,6 +87,12 @@ func newLog(storage Storage) *RaftLog {
 // grow unlimitedly in memory
 func (l *RaftLog) maybeCompact() {
 	// Your Code Here (2C).
+	if len(l.entries) == 0 {
+		return
+	}
+	if l.stabled >= l.entries[0].Index {
+		l.entries = l.entries[l.stabled+1-l.entries[0].Index:]
+	}
 }
 
 // unstableEntries return all the unstable entries
@@ -94,6 +100,7 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
 	// 若stabled在中
 	// 截掉
+	l.maybeCompact()
 	if len(l.entries) != 0 && l.stabled >= l.entries[0].Index {
 		l.entries = l.entries[l.stabled+1-l.entries[0].Index:]
 	}
@@ -102,6 +109,7 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 
 // 是否有unstable entries
 func (l *RaftLog) hasUnstableEntries() bool {
+	l.maybeCompact()
 	if len(l.entries) == 0 {
 		return false
 	}
@@ -269,6 +277,7 @@ func (l *RaftLog) findUnstableentries(lo, hi uint64) []pb.Entry {
 	if lo > hi {
 		log.Panicf("Node:%d invalid unstable slice %d > %d", l.id, lo, hi)
 	}
+	l.maybeCompact()
 	// upper := l.stabled + 1 + uint64(len(l.entries))
 	upper := l.entries[0].Index + uint64(len(l.entries))
 	if lo <= l.stabled || hi > upper {
