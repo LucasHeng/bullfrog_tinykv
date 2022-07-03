@@ -43,7 +43,7 @@ func newPeerMsgHandler(peer *peer, ctx *GlobalContext) *peerMsgHandler {
 	}
 }
 
-// todo: raft implement have problem
+//todo: raft implement have problem
 func (d *peerMsgHandler) HandleRaftReady() {
 	if d.stopped {
 		return
@@ -87,7 +87,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 				}
 				if len(msg.Requests) > 0 {
 					logWb = d.handleRequests(msg, &ent, logWb)
-					//logWb = d.processNormalRequest(ent, msg, logWb)
+
 				}
 				// 处理像 compact .... 这些的 admin request，然后一起批量写入
 				if msg.AdminRequest != nil {
@@ -218,16 +218,17 @@ func (d *peerMsgHandler) handleConfChange(ent eraftpb.Entry, wb *engine_util.Wri
 	if err != nil {
 		panic(err)
 	}
-	region := d.Region()
-	if err, ok := util.CheckRegionEpoch(msg, region, true).(*util.ErrEpochNotMatch); ok {
-		p := d.findProposal(&ent)
-		if p != nil {
-			p.cb.Done(ErrResp(err))
-		}
-		return wb
-	}
+	//region := d.Region()
+	//if err, ok := util.CheckRegionEpoch(msg, region, true).(*util.ErrEpochNotMatch); ok {
+	//	p := d.findProposal(&ent)
+	//	if p != nil {
+	//		p.cb.Done(ErrResp(err))
+	//	}
+	//	return wb
+	//}
+	d.RaftGroup.ApplyConfChange(*cc)
 	peerIndex := -1
-	for i, peer := range region.Peers {
+	for i, peer := range d.Region().Peers {
 		if peer.Id == cc.NodeId {
 			peerIndex = i
 		}
@@ -236,35 +237,39 @@ func (d *peerMsgHandler) handleConfChange(ent eraftpb.Entry, wb *engine_util.Wri
 	case eraftpb.ConfChangeType_RemoveNode:
 		if cc.NodeId == d.PeerId() {
 			if d.IsLeader() && len(d.RaftGroup.Raft.Prs) == 2 {
+				p := d.findProposal(&ent)
+				if p != nil {
+					p.cb.Done(ErrResp(errors.New("corner case")))
+				}
 				return wb
 			}
 			d.destroyPeer()
-			return wb
+			break
 		}
 		if peerIndex != -1 {
-			region.Peers = append(region.Peers[:peerIndex], region.Peers[peerIndex+1:]...)
-			region.RegionEpoch.ConfVer++
-			meta.WriteRegionState(wb, region, rspb.PeerState_Normal)
-			storeMeta := d.ctx.storeMeta
-			storeMeta.Lock()
-			storeMeta.regions[region.Id] = region
-			storeMeta.Unlock()
+			d.Region().Peers = append(d.Region().Peers[:peerIndex], d.Region().Peers[peerIndex+1:]...)
+			d.Region().RegionEpoch.ConfVer++
+			meta.WriteRegionState(wb, d.Region(), rspb.PeerState_Normal)
+			//storeMeta := d.ctx.storeMeta
+			//storeMeta.Lock()
+			//storeMeta.regions[region.Id] = region
+			//storeMeta.Unlock()
+			meta.WriteRegionState(wb, d.Region(), rspb.PeerState_Normal)
 			d.removePeerCache(cc.NodeId)
 		}
 	case eraftpb.ConfChangeType_AddNode:
 		if peerIndex == -1 {
 			peer := msg.AdminRequest.ChangePeer.Peer
-			region.Peers = append(region.Peers, peer)
-			region.RegionEpoch.ConfVer++
-			meta.WriteRegionState(wb, region, rspb.PeerState_Normal)
-			storeMeta := d.ctx.storeMeta
-			storeMeta.Lock()
-			storeMeta.regions[region.Id] = region
-			storeMeta.Unlock()
-			d.insertPeerCache(peer)
+			d.Region().Peers = append(d.Region().Peers, peer)
+			d.Region().RegionEpoch.ConfVer++
+			meta.WriteRegionState(wb, d.Region(), rspb.PeerState_Normal)
+			//storeMeta := d.ctx.storeMeta
+			//storeMeta.Lock()
+			//storeMeta.regions[region.Id] = region
+			//storeMeta.Unlock()
+			//d.insertPeerCache(peer)
 		}
 	}
-	d.RaftGroup.ApplyConfChange(*cc)
 	p := d.findProposal(&ent)
 	if p != nil {
 		p.cb.Done(&raft_cmdpb.RaftCmdResponse{
@@ -332,12 +337,21 @@ func (d *peerMsgHandler) handleAdminRequests(msg *raft_cmdpb.RaftCmdRequest, ent
 			return wb
 		}
 		// 更新元数据
-		storeMeta := d.ctx.storeMeta
-		storeMeta.Lock()
-		storeMeta.regionRanges.Delete(&regionItem{d.Region()})
+		//storeMeta := d.ctx.storeMeta
+		//storeMeta.Lock()
+		//storeMeta.regionRanges.Delete(&regionItem{d.Region()})
 		//// 删除 b tree 上的 region
 		//meta.regionRanges.Delete(&regionItem{region: d.Region()})
-		d.Region().RegionEpoch.Version += 1
+		//d.Region().RegionEpoch.Version += 1
+		for i := 0; i < len(d.Region().Peers); i++ {
+			for j := 0; j < len(d.Region().Peers)-i-1; j++ {
+				if d.Region().Peers[j].Id > d.Region().Peers[j+1].Id {
+					//temp := d.Region().Peers[j+1]
+					d.Region().Peers[j+1], d.Region().Peers[j] = d.Region().Peers[j], d.Region().Peers[j+1]
+					//d.Region().Peers[j] = temp
+				}
+			}
+		}
 		newPeers := make([]*metapb.Peer, 0)
 		for i, peer := range d.Region().Peers {
 			newPeers = append(newPeers, &metapb.Peer{
@@ -358,8 +372,17 @@ func (d *peerMsgHandler) handleAdminRequests(msg *raft_cmdpb.RaftCmdRequest, ent
 			},
 			Peers: newPeers,
 		}
+		// 这个新创建的 Region 的对应 Peer 应该由 createPeer() 创建，并register到 router.regions。
+		// 而 region 的信息应该插入 ctx.StoreMeta 中的regionRanges 中。
+		peers, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newRegion)
+		if err != nil {
+			panic(err)
+		}
+		storeMeta := d.ctx.storeMeta
+		storeMeta.Lock()
+		d.Region().RegionEpoch.Version++
 		d.Region().EndKey = split.SplitKey
-		storeMeta.regions[newRegion.Id] = newRegion
+		storeMeta.regions[split.NewRegionId] = newRegion
 		storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: newRegion})
 		storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: d.Region()})
 		storeMeta.Unlock()
@@ -369,14 +392,10 @@ func (d *peerMsgHandler) handleAdminRequests(msg *raft_cmdpb.RaftCmdRequest, ent
 		d.SizeDiffHint = 0
 		d.ApproximateSize = new(uint64)
 
-		// 这个新创建的 Region 的对应 Peer 应该由 createPeer() 创建，并register到 router.regions。
-		// 而 region 的信息应该插入 ctx.StoreMeta 中的regionRanges 中。
-		peers, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newRegion)
-		if err != nil {
-			panic(err)
-		}
 		d.ctx.router.register(peers)
-		d.ctx.router.send(newRegion.Id, message.NewMsg(message.MsgTypeStart, nil))
+		m := message.NewMsg(message.MsgTypeStart, nil)
+		m.RegionID = split.NewRegionId
+		d.ctx.router.send(split.NewRegionId, m)
 		if p != nil {
 			resp := &raft_cmdpb.RaftCmdResponse{
 				Header: &raft_cmdpb.RaftResponseHeader{},
@@ -387,9 +406,9 @@ func (d *peerMsgHandler) handleAdminRequests(msg *raft_cmdpb.RaftCmdRequest, ent
 			}
 			p.cb.Done(resp)
 		}
-		if d.IsLeader() {
-			d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
-		}
+		//if d.IsLeader() {
+		//	d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
+		//}
 	}
 	return wb
 }
@@ -498,49 +517,49 @@ func getRequestKey(req *raft_cmdpb.Request) []byte {
 }
 
 func (d *peerMsgHandler) findProposal(ent *eraftpb.Entry) *proposal {
-	//var proposal *proposal
-	//if len(d.proposals) > 0 {
-	//	p := d.proposals[0]
-	//	for p.index < ent.Index {
-	//		// 通知那些已经过时的propose结束
-	//		/*
-	//			实验指导书：
-	//			ErrStaleCommand：可能由于领导者的变化，一些日志没有被提交，就被新的领导者的日志所覆盖。
-	//			但是客户端并不知道，仍然在等待响应。所以你应该返回这个命令，让客户端知道并再次重试该命令。
-	//		*/
-	//		p.cb.Done(ErrResp(&util.ErrStaleCommand{}))
-	//		d.proposals = d.proposals[1:]
-	//		if len(d.proposals) == 0 {
-	//			return nil
-	//		}
-	//		p = d.proposals[0]
-	//	}
-	//	if p.index != ent.Index {
-	//		return nil
-	//	}
-	//	if p.term != ent.Term {
-	//		NotifyStaleReq(ent.Term, p.cb)
-	//		//d.proposals = d.proposals[1:]
-	//		return nil
-	//	}
-	//	proposal = p
-	//	d.proposals = d.proposals[1:]
-	//}
-	//return proposal
-	var propose *proposal
+	var proposal *proposal
 	if len(d.proposals) > 0 {
 		p := d.proposals[0]
-		if p.index == ent.Index {
-			if p.term != ent.Term {
-				NotifyStaleReq(ent.Term, p.cb)
-			} else {
-				propose = p
+		for p.index < ent.Index {
+			// 通知那些已经过时的propose结束
+			/*
+				实验指导书：
+				ErrStaleCommand：可能由于领导者的变化，一些日志没有被提交，就被新的领导者的日志所覆盖。
+				但是客户端并不知道，仍然在等待响应。所以你应该返回这个命令，让客户端知道并再次重试该命令。
+			*/
+			p.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+			d.proposals = d.proposals[1:]
+			if len(d.proposals) == 0 {
+				return nil
 			}
+			p = d.proposals[0]
 		}
-		// handle one proposal
+		if p.index != ent.Index {
+			return nil
+		}
+		if p.term != ent.Term {
+			NotifyStaleReq(ent.Term, p.cb)
+			d.proposals = d.proposals[1:]
+			return nil
+		}
+		proposal = p
 		d.proposals = d.proposals[1:]
 	}
-	return propose
+	return proposal
+	//var propose *proposal
+	//if len(d.proposals) > 0 {
+	//	p := d.proposals[0]
+	//	if p.index == ent.Index {
+	//		if p.term != ent.Term {
+	//			NotifyStaleReq(ent.Term, p.cb)
+	//		} else {
+	//			propose = p
+	//		}
+	//	}
+	//	// handle one proposal
+	//	d.proposals = d.proposals[1:]
+	//}
+	//return propose
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
@@ -659,11 +678,11 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 				return
 			}
 			changePeer := msg.AdminRequest.ChangePeer
-			d.proposals = append(d.proposals, &proposal{
-				cb:    cb,
-				index: d.nextProposalIndex(),
-				term:  d.Term(),
-			})
+			//d.proposals = append(d.proposals, &proposal{
+			//	cb:    cb,
+			//	index: d.nextProposalIndex(),
+			//	term:  d.Term(),
+			//})
 			ctx, _ := msg.Marshal()
 			d.RaftGroup.ProposeConfChange(eraftpb.ConfChange{
 				ChangeType: changePeer.ChangeType,
