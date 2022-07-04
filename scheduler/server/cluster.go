@@ -278,8 +278,59 @@ func (c *RaftCluster) handleStoreHeartbeat(stats *schedulerpb.StoreStats) error 
 
 // processRegionHeartbeat updates the region information.
 func (c *RaftCluster) processRegionHeartbeat(region *core.RegionInfo) error {
+	if region == nil {
+		return nil
+	}
 	// Your Code Here (3C).
-
+	// 消息不一定可信，比如region出現分區而導致的腦裂，这意味着 Scheduler 不能同时信任它们
+	// Scheduler 应该首先比较两个节点的 Region 版本的值
+	// 如果数值相同，Scheduler 会比较配置变化版本的数值，拥有较大配置变更版本的节点必须拥有较新的信息。
+	regionCache := c.GetRegion(region.GetID())
+	// ver 為 true證明版本號是新的
+	ver := true
+	if regionCache != nil {
+		if region.GetRegionEpoch().GetVersion() < regionCache.GetRegionEpoch().GetVersion() ||
+			region.GetRegionEpoch().GetConfVer() < regionCache.GetRegionEpoch().GetConfVer() {
+			//fmt.Printf("[processRegionHeartbeat regionCache!=nil] region heart out, send:%v cache:%v\n",region.GetRegionEpoch(), regionCache.GetRegionEpoch())
+			ver = false
+			//return errors.New("region epoch is stale,heartbeat fail")
+		}
+	} else {
+		scanRegions := c.ScanRegions(region.GetStartKey(), region.GetEndKey(), -1)
+		for _, r := range scanRegions {
+			if region.GetRegionEpoch() == nil || r.GetRegionEpoch() == nil {
+				return errors.New("region epoch is nil, heartbeat fail")
+			} else if region.GetRegionEpoch().GetVersion() < r.GetRegionEpoch().GetVersion() ||
+				region.GetRegionEpoch().GetConfVer() < r.GetRegionEpoch().GetConfVer() {
+				ver = false
+				//return errors.New("region epoch is stale,heartbeat fail")
+			}
+		}
+	}
+	// lead為true證明leader更改了
+	lead := false
+	if regionCache != nil && region.GetLeader().GetId() != regionCache.GetLeader().GetId() {
+		lead = true
+	}
+	// pend為true證明 new one or original one has pending peer
+	pend := false
+	if regionCache != nil && (len(region.GetPendingPeers()) != 0 || len(regionCache.GetPendingPeers()) != 0) {
+		pend = true
+	}
+	// appr為true證明 ApproximateSize changed
+	appr := false
+	if regionCache != nil && region.GetApproximateSize() != regionCache.GetApproximateSize() {
+		appr = true
+	}
+	if !ver && !lead && !pend && !appr {
+		// not change
+		return errors.New("stale heartbeat")
+	}
+	// change
+	c.core.PutRegion(region)
+	for _, p := range region.GetPeers() {
+		c.updateStoreStatusLocked(p.StoreId)
+	}
 	return nil
 }
 
