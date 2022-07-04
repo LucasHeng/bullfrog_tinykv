@@ -171,6 +171,7 @@ type Raft struct {
 func newRaft(c *Config) *Raft {
 	// Your Code Here (2A).
 	// 可能是机器重启？
+	fmt.Println("create new peer : ", c.ID)
 	if err := c.validate(); err != nil {
 		panic(err)
 	}
@@ -434,6 +435,7 @@ func (r *Raft) becomeLeader() {
 	if flag == "election" || flag == "all" {
 		DPrintf("{Node: %d} become leader in term: %d", r.id, r.Term)
 	}
+	fmt.Printf("{Node: %d} become leader in term: %d\n", r.id, r.Term)
 }
 
 func (r *Raft) broadcastAppend() {
@@ -638,40 +640,54 @@ func (r *Raft) stepCandidate(m pb.Message) {
 	}
 }
 
-// handleRequestVote
 func (r *Raft) handleRequestVote(m pb.Message) {
-	// 收到了投票请求
-	if r.Term > m.Term {
-		// 如果term比候选者大，则拒绝
-		msg := pb.Message{MsgType: pb.MessageType_MsgRequestVoteResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
-		r.msgs = append(r.msgs, msg)
-		if flag == "election" || flag == "all" {
-			DPrintf("{Node: %d} send {requestResp:Term: %d, Reject: %v} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
+	if m.Term < r.Term {
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgRequestVoteResponse,
+			From:    r.id,
+			To:      m.From,
+			Term:    r.Term,
+			Reject:  true,
 		}
+		r.msgs = append(r.msgs, msg)
 		return
 	}
-	if r.Term < m.Term {
-		// 对方Term比我大，变成follower
+	// leader和candidate不退位
+	if r.State != StateFollower && m.Term > r.Term {
 		r.becomeFollower(m.Term, None)
 	}
-	// 因为前面的操作，所以现在当前raft的term一定是与m的term一样的
-	// 因为前面的设置，可能出现vote为None，而lead不为None，这个时候也不能投票
-	if ((r.Vote == None && r.Lead == None) || r.Vote == m.From) && r.RaftLog.isUpToDate(m.Index, m.LogTerm) {
-		msg := pb.Message{MsgType: pb.MessageType_MsgRequestVoteResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
-		r.msgs = append(r.msgs, msg)
-		// 投票了，那么就要重置竞选时间
-		r.Vote = m.From
-		r.electionElapsed = 0
-		if flag == "election" || flag == "all" {
-			DPrintf("{Node: %d} send {requestResp:Term: %d, Reject: %v} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
-		}
-	} else {
-		msg := pb.Message{MsgType: pb.MessageType_MsgRequestVoteResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
-		r.msgs = append(r.msgs, msg)
-		if flag == "election" || flag == "all" {
-			DPrintf("{Node: %d} send {requestResp:Term: %d, Reject: %v} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
+	if r.Term < m.Term {
+		r.Vote = None
+		r.Term = m.Term
+	}
+	if r.Vote == None || r.Vote == m.From {
+		if r.RaftLog.isUpToDate(m.Index, m.LogTerm) {
+			// 如果更新，就让leader退位，防止脑裂
+			r.becomeFollower(m.Term, None)
+			r.Vote = m.From
+			if r.Term < m.Term {
+				r.Term = m.Term
+			}
+			msg := pb.Message{
+				MsgType: pb.MessageType_MsgRequestVoteResponse,
+				From:    r.id,
+				To:      m.From,
+				Term:    r.Term,
+				Reject:  false,
+			}
+			r.msgs = append(r.msgs, msg)
+			return
 		}
 	}
+	msg := pb.Message{
+		MsgType: pb.MessageType_MsgRequestVoteResponse,
+		From:    r.id,
+		To:      m.From,
+		Term:    r.Term,
+		Reject:  true,
+	}
+	r.msgs = append(r.msgs, msg)
+	return
 }
 
 // leader
@@ -710,10 +726,10 @@ func (r *Raft) stepLeader(m pb.Message) {
 		r.handleRequestVote(m)
 	case pb.MessageType_MsgRequestVoteResponse:
 	case pb.MessageType_MsgHeartbeatResponse:
-		if m.Term > r.Term {
-			r.becomeFollower(m.Term, None)
-			return
-		}
+		//if m.Term > r.Term {
+		//	r.becomeFollower(m.Term, None)
+		//	return
+		//}
 		if pr, ok := r.Prs[m.From]; ok {
 			pr.isHeartbeat = true
 		}
@@ -755,7 +771,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 	}
 	if m.Term > r.Term {
 		// 对方Term比自己大
-		r.becomeFollower(m.Term, None)
+		//r.becomeFollower(m.Term, None)
 	} else {
 		// 收到是和自己相同的term
 		// 是成功还是失败？

@@ -343,15 +343,6 @@ func (d *peerMsgHandler) handleAdminRequests(msg *raft_cmdpb.RaftCmdRequest, ent
 		//// 删除 b tree 上的 region
 		//meta.regionRanges.Delete(&regionItem{region: d.Region()})
 		//d.Region().RegionEpoch.Version += 1
-		for i := 0; i < len(d.Region().Peers); i++ {
-			for j := 0; j < len(d.Region().Peers)-i-1; j++ {
-				if d.Region().Peers[j].Id > d.Region().Peers[j+1].Id {
-					//temp := d.Region().Peers[j+1]
-					d.Region().Peers[j+1], d.Region().Peers[j] = d.Region().Peers[j], d.Region().Peers[j+1]
-					//d.Region().Peers[j] = temp
-				}
-			}
-		}
 		newPeers := make([]*metapb.Peer, 0)
 		for i, peer := range d.Region().Peers {
 			newPeers = append(newPeers, &metapb.Peer{
