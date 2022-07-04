@@ -67,7 +67,7 @@ type Ready struct {
 }
 
 func (rd Ready) applyIndex() uint64 {
-	if rd.CommittedEntries != nil {
+	if rd.CommittedEntries != nil && len(rd.CommittedEntries) != 0 {
 		return rd.CommittedEntries[len(rd.CommittedEntries)-1].Index
 	}
 	// 如果有snap
@@ -163,7 +163,7 @@ func (rn *RawNode) Step(m pb.Message) error {
 // Ready returns the current point-in-time state of this RawNode.
 func (rn *RawNode) Ready() Ready {
 	// Your Code Here (2A).
-	rd := Ready{}
+	rd := Ready{Entries: []pb.Entry{}, CommittedEntries: []pb.Entry{}}
 	// ss是否有更新
 	ss := rn.Raft.softState()
 	if !compareSS(ss, rn.prevSS) {
@@ -284,6 +284,7 @@ func (rn *RawNode) Advance(rd Ready) {
 	if !IsEmptySnap(&rd.Snapshot) {
 		rn.Raft.RaftLog.stableSnapTo(rd.Snapshot.Metadata.Index)
 	}
+	rn.Raft.RaftLog.maybeCompact()
 }
 
 // GetProgress return the Progress of this node and its peers, if this

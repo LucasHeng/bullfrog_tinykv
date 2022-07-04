@@ -196,7 +196,8 @@ func (l *RaftLog) unstableTerm(i uint64) (uint64, bool) {
 		return 0, false
 	}
 
-	return l.entries[i-l.stabled-1].Term, true
+	// return l.entries[i-l.stabled-1].Term, true
+	return l.entries[i-l.entries[0].Index].Term, true
 }
 
 // Term return the term of the entry in the given index
@@ -277,13 +278,13 @@ func (l *RaftLog) findUnstableentries(lo, hi uint64) []pb.Entry {
 	if lo > hi {
 		log.Panicf("Node:%d invalid unstable slice %d > %d", l.id, lo, hi)
 	}
-	l.maybeCompact()
+	// l.maybeCompact()
 	// upper := l.stabled + 1 + uint64(len(l.entries))
 	upper := l.entries[0].Index + uint64(len(l.entries))
 	if lo <= l.stabled || hi > upper {
 		log.Panicf("Node:%d invalid unstable slice [%d,%d) out of bound[%d,%d]", l.id, lo, hi, l.stabled+1, upper)
 	}
-	return l.entries[lo-l.stabled-1 : hi-l.stabled-1]
+	return l.entries[lo-l.entries[0].Index : hi-l.entries[0].Index]
 }
 
 func (l *RaftLog) appentries(i uint64) ([]pb.Entry, error) {
