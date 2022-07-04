@@ -107,6 +107,7 @@ func (c *Config) validate() error {
 // progresses of all followers, and sends entries to the follower based on its progress.
 type Progress struct {
 	Match, Next uint64
+	isHeartbeat bool
 }
 
 type Raft struct {
@@ -190,7 +191,7 @@ func newRaft(c *Config) *Raft {
 		randElectionTimeout:    0,
 		leadTransferee:         0, //3A
 		PendingConfIndex:       0, //3A
-		PendingSnapshotTimeOut: 10,
+		PendingSnapshotTimeOut: 3,
 		//SendSnapShot:           make(map[uint64]int),
 	}
 	// 恢复初始状态？
@@ -302,19 +303,33 @@ func (r *Raft) tick() {
 	case StateFollower, StateCandidate:
 		r.tickElection()
 	case StateLeader:
+		r.tickLease()
 		r.tickHeartbeat()
 	}
 }
 
-//func (r *Raft) tickSnap() {
-//	for node, _ := range r.SendSnapShot {
-//		r.SendSnapShot[node]++
-//		if r.SendSnapShot[node] >= r.PendingSnapshotTimeOut {
-//			ToCPrint("[tickSnap] pending snapshot time out ,delete ")
-//			delete(r.SendSnapShot, node)
-//		}
-//	}
-//}
+func (r *Raft) tickLease() {
+	r.electionElapsed++
+	if r.electionElapsed >= r.randElectionTimeout {
+		num := 0
+		for i, pr := range r.Prs {
+			if i == r.id {
+				num++
+			} else if pr.isHeartbeat {
+				num++
+			}
+			pr.isHeartbeat = false
+		}
+		// 超过时间了,开始新的选举
+		r.electionElapsed = 0
+		r.resetrandElectionTimeout()
+
+		if num < len(r.Prs)/2 {
+			fmt.Printf("%v %v need to hup again\n", r.State, r.id)
+			r.hup()
+		}
+	}
+}
 
 func (r *Raft) tickElection() {
 	r.electionElapsed++
@@ -498,7 +513,7 @@ func (r *Raft) Step(m pb.Message) error {
 func (r *Raft) stepFollower(m pb.Message) {
 	switch m.GetMsgType() {
 	case pb.MessageType_MsgHup:
-		fmt.Printf("%v now have %v\n", r.id, r.Prs)
+		//fmt.Printf("%v now have %v\n", r.id, r.Prs)
 		r.hup()
 	case pb.MessageType_MsgPropose:
 		if r.Lead != None {
@@ -532,10 +547,10 @@ func (r *Raft) stepFollower(m pb.Message) {
 }
 
 func (r *Raft) hup() {
-	if r.State == StateLeader {
-		// 已经是leader，则不需要竞选
-		return
-	}
+	//if r.State == StateLeader {
+	//	// 已经是leader，则不需要竞选
+	//	return
+	//}
 	if _, ok := r.Prs[r.id]; !ok {
 		return
 	}
@@ -662,8 +677,6 @@ func (r *Raft) handleRequestVote(m pb.Message) {
 // leader
 func (r *Raft) stepLeader(m pb.Message) {
 	switch m.GetMsgType() {
-	case pb.MessageType_MsgHup:
-		r.hup()
 	case pb.MessageType_MsgBeat:
 		// 发送heartbeat给所有的peer
 		for pid := range r.Prs {
@@ -689,6 +702,9 @@ func (r *Raft) stepLeader(m pb.Message) {
 		// leader也会收到Append消息
 		r.handleAppendEntries(m)
 	case pb.MessageType_MsgAppendResponse:
+		if pr, ok := r.Prs[m.From]; ok {
+			pr.isHeartbeat = true
+		}
 		r.handleAppendResponse(m)
 	case pb.MessageType_MsgRequestVote:
 		r.handleRequestVote(m)
@@ -697,6 +713,9 @@ func (r *Raft) stepLeader(m pb.Message) {
 		if m.Term > r.Term {
 			r.becomeFollower(m.Term, None)
 			return
+		}
+		if pr, ok := r.Prs[m.From]; ok {
+			pr.isHeartbeat = true
 		}
 		lastTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
 		if lastTerm > m.LogTerm || (lastTerm == m.LogTerm && r.RaftLog.LastIndex() > m.Index) {
@@ -810,16 +829,16 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	r.becomeFollower(m.Term, m.From)
 	// 如果发送的message的消息早于commit，则这个消息应该拒绝，因为commit的entry不应该修改
 	// 回复的Index应该是已经匹配的Index
-	if m.Index < r.RaftLog.committed {
-		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
-		msg.Index = r.RaftLog.committed
-		msg.LogTerm = None
-		r.msgs = append(r.msgs, msg)
-		if ToB {
-			SplitPrint("[%v %v handleAppendEntries] reject append because m.Index %v < r.RaftLog.committed %v", r.State, r.id, m.Index, r.RaftLog.committed)
-		}
-		return
-	}
+	//if m.Index < r.RaftLog.committed {
+	//	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
+	//	msg.Index = r.RaftLog.committed
+	//	msg.LogTerm = None
+	//	r.msgs = append(r.msgs, msg)
+	//	if ToB {
+	//		SplitPrint("[%v %v handleAppendEntries] reject append because m.Index %v < r.RaftLog.committed %v", r.State, r.id, m.Index, r.RaftLog.committed)
+	//	}
+	//	return
+	//}
 	if !r.isLogmatch(m.Index, m.LogTerm) {
 		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
 		hintindex := min(m.Index, r.RaftLog.LastIndex())
