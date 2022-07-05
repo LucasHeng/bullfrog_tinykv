@@ -274,7 +274,7 @@ func (r *Raft) sendSnapshot(to uint64) {
 		Term:     r.Term,
 	})
 	// meta.Index 是db中保存的 RaftApplyState的信息，这个已经确保被snapshot的follower应用了，所以next要加一
-	r.Prs[to].Next = snap.Metadata.Index + 1
+	r.Prs[to].Next = snap.Metadata.Index
 	//r.SendSnapShot[to] = 0
 }
 
@@ -403,6 +403,7 @@ func (r *Raft) becomeLeader() {
 	// Your Code Here (2A).
 	// NOTE: Leader should propose a noop entry on its term
 	r.reset(r.Term)
+	//r.Vote = r.id
 	r.State = StateLeader
 	r.Lead = r.id
 	for i, p := range r.Prs {
@@ -739,6 +740,8 @@ func (r *Raft) stepLeader(m pb.Message) {
 		}
 	case pb.MessageType_MsgSnapshot:
 		r.handleSnapshot(m)
+	case pb.MessageType_MsgHeartbeat:
+		r.handleHeartbeat(m)
 	}
 }
 
@@ -951,7 +954,11 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 		}
 		return
 	}
-	r.becomeFollower(m.Term, m.From)
+	if r.State == StateLeader && r.Term < m.Term {
+		r.becomeFollower(m.Term, m.From)
+	} else if r.State != StateLeader {
+		r.becomeFollower(m.Term, m.From)
+	}
 	//r.RaftLog.commitTo(min(m.Commit, r.RaftLog.LastIndex()))
 	logTerm, _ := r.RaftLog.Term(r.RaftLog.LastIndex())
 	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term, Index: r.RaftLog.LastIndex(), LogTerm: logTerm}
