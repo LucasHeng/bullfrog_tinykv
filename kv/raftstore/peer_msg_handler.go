@@ -144,10 +144,7 @@ func (d *peerMsgHandler) handleConfChange(ent eraftpb.Entry, wb *engine_util.Wri
 	case eraftpb.ConfChangeType_RemoveNode:
 		if cc.NodeId == d.PeerId() {
 			if d.IsLeader() && len(d.RaftGroup.Raft.Prs) == 2 {
-				p := d.findProposal(&ent)
-				if p != nil {
-					p.cb.Done(ErrResp(errors.New("corner case")))
-				}
+				fmt.Println("corner case")
 				return wb
 			}
 			d.destroyPeer()
@@ -177,16 +174,16 @@ func (d *peerMsgHandler) handleConfChange(ent eraftpb.Entry, wb *engine_util.Wri
 			//d.insertPeerCache(peer)
 		}
 	}
-	p := d.findProposal(&ent)
-	if p != nil {
-		p.cb.Done(&raft_cmdpb.RaftCmdResponse{
-			Header: &raft_cmdpb.RaftResponseHeader{},
-			AdminResponse: &raft_cmdpb.AdminResponse{
-				CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
-				ChangePeer: &raft_cmdpb.ChangePeerResponse{},
-			},
-		})
-	}
+	//p := d.findProposal(&ent)
+	//if p != nil {
+	//	p.cb.Done(&raft_cmdpb.RaftCmdResponse{
+	//		Header: &raft_cmdpb.RaftResponseHeader{},
+	//		AdminResponse: &raft_cmdpb.AdminResponse{
+	//			CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
+	//			ChangePeer: &raft_cmdpb.ChangePeerResponse{},
+	//		},
+	//	})
+	//}
 	if d.IsLeader() {
 		d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
 	}

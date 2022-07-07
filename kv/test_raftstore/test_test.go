@@ -631,7 +631,7 @@ func TestConfChangeSnapshotUnreliableRecoverConcurrentPartition3B(t *testing.T) 
 	GenericTest(t, "3B", 5, true, true, true, 100, true, false)
 }
 
-func TestOneSplit3B(t *testing.T) {
+func TestOneSplit3B(t *testing.T) { // 200 : pass 200 fail 0
 	cfg := config.NewTestConfig()
 	cfg.RegionMaxSize = 800
 	cfg.RegionSplitSize = 500
