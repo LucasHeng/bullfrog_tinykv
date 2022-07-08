@@ -408,6 +408,14 @@ func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb 
 			panic(err)
 		}
 		d.RaftGroup.Propose(data)
+	case raft_cmdpb.AdminCmdType_TransferLeader:
+		// 通过rawnode执行transferleader
+		resp := &raft_cmdpb.RaftCmdResponse{
+			Header:        &raft_cmdpb.RaftResponseHeader{},
+			AdminResponse: &raft_cmdpb.AdminResponse{CmdType: raft_cmdpb.AdminCmdType_TransferLeader},
+		}
+		d.RaftGroup.TransferLeader(msg.AdminRequest.TransferLeader.Peer.Id)
+		cb.Done(resp)
 	default:
 		panic("no such admin request")
 	}
