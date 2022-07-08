@@ -129,15 +129,11 @@ func (d *peerMsgHandler) handleConfChange(c *eraftpb.ConfChange, ent eraftpb.Ent
 	if err := util.CheckRegionEpoch(msg, region, true); err != nil {
 		if error, ok := err.(*util.ErrEpochNotMatch); ok {
 			if len(d.proposals) > 0 {
-				proposal := d.proposals[0]
-				if proposal.index == ent.Index {
-					if proposal.term != ent.Term {
-						NotifyStaleReq(ent.Term, proposal.cb)
-					} else {
-						proposal.cb.Done(ErrResp(error))
-					}
+				p := d.findProposal(&ent)
+				if p != nil {
+					p.cb.Done(ErrResp(error))
+					return wb
 				}
-				d.proposals = d.proposals[1:]
 			}
 		} else {
 			// todo : need to do?
@@ -205,22 +201,16 @@ func (d *peerMsgHandler) handleConfChange(c *eraftpb.ConfChange, ent eraftpb.Ent
 	}
 	// apply conf change
 	d.RaftGroup.ApplyConfChange(*c)
-	if len(d.proposals) > 0 {
-		proposal := d.proposals[0]
-		if proposal.index == ent.Index {
-			if proposal.term != ent.Term {
-				NotifyStaleReq(ent.Term, proposal.cb)
-			} else {
-				proposal.cb.Done(&raft_cmdpb.RaftCmdResponse{
-					Header: &raft_cmdpb.RaftResponseHeader{},
-					AdminResponse: &raft_cmdpb.AdminResponse{
-						CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
-						ChangePeer: &raft_cmdpb.ChangePeerResponse{Region: region},
-					},
-				})
-			}
-		}
-		d.proposals = d.proposals[1:]
+	p := d.findProposal(&ent)
+	if p != nil {
+		p.cb.Done(&raft_cmdpb.RaftCmdResponse{
+			Header: &raft_cmdpb.RaftResponseHeader{},
+			AdminResponse: &raft_cmdpb.AdminResponse{
+				CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
+				ChangePeer: &raft_cmdpb.ChangePeerResponse{Region: region},
+			},
+		})
+		return wb
 	}
 	// if leader, heartbeat and create the new peer
 	if d.IsLeader() {

@@ -274,7 +274,7 @@ func (r *Raft) sendSnapshot(to uint64) {
 		Term:     r.Term,
 	})
 	// meta.Index 是db中保存的 RaftApplyState的信息，这个已经确保被snapshot的follower应用了，所以next要加一
-	r.Prs[to].Next = snap.Metadata.Index
+	r.Prs[to].Next = snap.Metadata.Index + 1
 	//r.SendSnapShot[to] = 0
 }
 

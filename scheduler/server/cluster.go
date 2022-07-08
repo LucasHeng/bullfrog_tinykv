@@ -299,7 +299,7 @@ func (c *RaftCluster) processRegionHeartbeat(region *core.RegionInfo) error {
 		scanRegions := c.ScanRegions(region.GetStartKey(), region.GetEndKey(), -1)
 		for _, r := range scanRegions {
 			if region.GetRegionEpoch() == nil || r.GetRegionEpoch() == nil {
-				return errors.New("region epoch is nil, heartbeat fail")
+				ver = false
 			} else if region.GetRegionEpoch().GetVersion() < r.GetRegionEpoch().GetVersion() ||
 				region.GetRegionEpoch().GetConfVer() < r.GetRegionEpoch().GetConfVer() {
 				ver = false
@@ -328,8 +328,8 @@ func (c *RaftCluster) processRegionHeartbeat(region *core.RegionInfo) error {
 	}
 	// change
 	c.core.PutRegion(region)
-	for _, p := range region.GetPeers() {
-		c.updateStoreStatusLocked(p.StoreId)
+	for id := range region.GetStoreIds() {
+		c.updateStoreStatusLocked(id)
 	}
 	return nil
 }
