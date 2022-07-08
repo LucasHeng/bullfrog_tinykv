@@ -324,6 +324,19 @@ func (r *Raft) tickElection() {
 func (r *Raft) tickHeartbeat() {
 	// 心跳时间+1
 	r.heartbeatElapsed++
+	r.electionElapsed++
+
+	if r.electionElapsed >= r.electionTimeout {
+		r.electionElapsed = 0
+		if r.State == StateLeader && r.leadTransferee != None {
+			r.abortLeaderTransfer()
+		}
+	}
+
+	if r.State != StateLeader {
+		return
+	}
+
 	if r.heartbeatElapsed >= r.heartbeatTimeout {
 		// 发生心跳
 		r.heartbeatElapsed = 0
@@ -352,6 +365,8 @@ func (r *Raft) reset(term uint64) {
 	r.heartbeatElapsed = 0
 	r.electionElapsed = 0
 	r.PendingConfIndex = 0
+
+	r.abortLeaderTransfer()
 	// 重置选票
 	r.votes = make(map[uint64]bool)
 	// 重置progress
@@ -494,6 +509,9 @@ func (r *Raft) stepFollower(m pb.Message) {
 
 	case pb.MessageType_MsgTimeoutNow:
 		// 开始新的选举
+		if _, ok := r.Prs[r.id]; !ok {
+			return
+		}
 		r.hup()
 	}
 }
@@ -579,6 +597,10 @@ func (r *Raft) stepCandidate(m pb.Message) {
 
 	case pb.MessageType_MsgTimeoutNow:
 		// 开始新的选举
+		if _, ok := r.Prs[r.id]; !ok {
+			// 自己不存在了
+			return
+		}
 		r.hup()
 	}
 }
@@ -656,6 +678,10 @@ func (r *Raft) stepLeader(m pb.Message) {
 		// 再给所有的peer发送
 
 		r.printMessage(m, "HandlePropose")
+		if r.leadTransferee != None {
+			r.printMessage(m, "leadtransfering")
+			return
+		}
 		r.AppendEntries(m.Entries...)
 		r.broadcastAppend()
 	case pb.MessageType_MsgAppend:
@@ -679,7 +705,48 @@ func (r *Raft) stepLeader(m pb.Message) {
 		if lastTerm == r.Term || (lastTerm == m.LogTerm && r.RaftLog.LastIndex() > m.Index) {
 			r.sendAppend(m.From)
 		}
+	case pb.MessageType_MsgTransferLeader:
+		// 判断leadTransferee
+		pr, ok := r.Prs[m.From]
+		if !ok {
+			// 不存在扔掉
+			return
+		}
+		leadTransferee := m.From
+		lastLeadTransferee := r.leadTransferee
+		if lastLeadTransferee != None {
+			// 上一轮还有leadtransfer未完成
+			if lastLeadTransferee == leadTransferee {
+				// 重复发送，不用管
+				return
+			}
+			r.abortLeaderTransfer()
+		}
+		if leadTransferee == r.id {
+			// 转换成自己，扔掉
+			return
+		}
+		r.electionElapsed = 0
+		r.leadTransferee = leadTransferee
+		if pr.Match == r.RaftLog.LastIndex() {
+			r.sendTimeoutNow(leadTransferee)
+		} else {
+			r.sendAppend(leadTransferee)
+		}
 	}
+}
+
+func (r *Raft) sendTimeoutNow(to uint64) {
+	msg := pb.Message{MsgType: pb.MessageType_MsgTimeoutNow,
+		To:   to,
+		From: r.id,
+		Term: r.Term,
+	}
+	r.msgs = append(r.msgs, msg)
+}
+
+func (r *Raft) abortLeaderTransfer() {
+	r.leadTransferee = None
 }
 
 // 处理appendResponse
@@ -737,6 +804,33 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		if progress.Next <= lastindex {
 			r.sendAppend(m.From)
 		}
+
+		if m.From == r.leadTransferee && progress.Match == r.RaftLog.LastIndex() {
+			r.sendTimeoutNow(m.From)
+		}
+	}
+}
+
+func (r *Raft) updateCommit() {
+	N := r.RaftLog.LastIndex()
+	for ; N > r.RaftLog.committed; N-- {
+		cnt := 1
+		for id := range r.Prs {
+			if id != r.id && r.Prs[id].Match >= N {
+				cnt++
+			}
+		}
+		if cnt > len(r.Prs)/2 {
+			break
+		}
+	}
+	// 只提交当前term的log
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && committerm == r.Term {
+		// 只提交当前term的log
+		To2B("Node:%d commitTo:%d with apply:%d  precommit:%d  stable:%d and LastIndex:%d", r.id, N, r.RaftLog.applied, r.RaftLog.committed, r.RaftLog.stabled, r.RaftLog.LastIndex())
+		r.RaftLog.commitTo(N)
+		r.broadcastAppend()
 	}
 }
 
@@ -997,11 +1091,25 @@ func (r *Raft) restore(s *pb.Snapshot) bool {
 // addNode add a new node to raft group
 func (r *Raft) addNode(id uint64) {
 	// Your Code Here (3A).
+	if _, ok := r.Prs[id]; !ok {
+		r.Prs[id] = &Progress{
+			Match: 0,
+			Next:  1,
+		}
+	}
+	r.PendingConfIndex = None
 }
 
 // removeNode remove a node from raft group
 func (r *Raft) removeNode(id uint64) {
 	// Your Code Here (3A).
+	if _, ok := r.Prs[id]; ok {
+		delete(r.Prs, id)
+		if r.State == StateLeader {
+			r.updateCommit()
+		}
+	}
+	r.PendingConfIndex = None
 }
 
 // 加载原先的HardState
