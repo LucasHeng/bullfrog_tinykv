@@ -601,7 +601,7 @@ func TestBasicConfChange3B(t *testing.T) {
 	MustGetNone(cluster.engines[3], []byte("k4"))
 }
 
-func TestConfChangeRecover3B(t *testing.T) {
+func TestConfChangeRecover3B(t *testing.T) { // 85 pass 76 fail 9 :  request timeout , maybe is the snapshot too slow
 	// Test: restarts, snapshots, conf change, one client (3B) ...
 	GenericTest(t, "3B", 1, false, true, false, -1, true, false)
 }

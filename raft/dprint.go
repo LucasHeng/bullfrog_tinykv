@@ -8,7 +8,7 @@ const flag = "Debug2B"
 
 var ToB = false
 var ToC = false
-var Split = true
+var Split = false
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug {

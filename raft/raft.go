@@ -164,7 +164,7 @@ type Raft struct {
 	PendingConfIndex uint64
 
 	//SendSnapShot           map[uint64]int
-	PendingSnapshotTimeOut int
+	//PendingSnapshotTimeOut int
 }
 
 // newRaft return a raft peer with the given config
@@ -176,23 +176,23 @@ func newRaft(c *Config) *Raft {
 		panic(err)
 	}
 	r := &Raft{
-		id:                     c.ID,
-		Term:                   0,
-		Vote:                   None,
-		RaftLog:                newLog(c.Storage),
-		Prs:                    make(map[uint64]*Progress),
-		State:                  StateFollower,
-		votes:                  make(map[uint64]bool),
-		msgs:                   make([]pb.Message, 0),
-		Lead:                   None,
-		heartbeatTimeout:       c.HeartbeatTick,
-		electionTimeout:        c.ElectionTick,
-		heartbeatElapsed:       0,
-		electionElapsed:        0,
-		randElectionTimeout:    0,
-		leadTransferee:         0, //3A
-		PendingConfIndex:       0, //3A
-		PendingSnapshotTimeOut: 3,
+		id:                  c.ID,
+		Term:                0,
+		Vote:                None,
+		RaftLog:             newLog(c.Storage),
+		Prs:                 make(map[uint64]*Progress),
+		State:               StateFollower,
+		votes:               make(map[uint64]bool),
+		msgs:                make([]pb.Message, 0),
+		Lead:                None,
+		heartbeatTimeout:    c.HeartbeatTick,
+		electionTimeout:     c.ElectionTick,
+		heartbeatElapsed:    0,
+		electionElapsed:     0,
+		randElectionTimeout: 0,
+		leadTransferee:      0, //3A
+		PendingConfIndex:    0, //3A
+		//PendingSnapshotTimeOut: 3,
 		//SendSnapShot:           make(map[uint64]int),
 	}
 	// 恢复初始状态？
@@ -326,7 +326,7 @@ func (r *Raft) tickLease() {
 		r.resetrandElectionTimeout()
 
 		if num < len(r.Prs)/2 {
-			fmt.Printf("%v %v need to hup again\n", r.State, r.id)
+			//fmt.Printf("%v %v need to hup again\n", r.State, r.id)
 			r.hup()
 		}
 	}
@@ -436,7 +436,7 @@ func (r *Raft) becomeLeader() {
 	if flag == "election" || flag == "all" {
 		DPrintf("{Node: %d} become leader in term: %d", r.id, r.Term)
 	}
-	fmt.Printf("{Node: %d} become leader in term: %d\n", r.id, r.Term)
+	//fmt.Printf("{Node: %d} become leader in term: %d\n", r.id, r.Term)
 }
 
 func (r *Raft) broadcastAppend() {
@@ -505,8 +505,14 @@ func (r *Raft) Step(m pb.Message) error {
 	case StateFollower:
 		r.stepFollower(m)
 	case StateCandidate:
+		if _, ok := r.Prs[r.id]; !ok {
+			return nil
+		}
 		r.stepCandidate(m)
 	case StateLeader:
+		if _, ok := r.Prs[r.id]; !ok {
+			return nil
+		}
 		r.stepLeader(m)
 	}
 	return nil
@@ -882,14 +888,14 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 		r.RaftLog.applied = m.Index
 	}
 	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
-	if ToB {
-		ToBPrint("[%v %v handleAppendEntries] success, now lastIndex:%v,actual len:%v, committed:%v, apply:%v", r.State, r.id, r.RaftLog.LastIndex(), len(r.RaftLog.entries), r.RaftLog.committed, r.RaftLog.applied)
-		r.DebugEntries(msg.Entries)
-		for i, entry := range r.RaftLog.entries {
-			fmt.Printf("%v:%v;", i, entry)
-		}
-		fmt.Println()
-	}
+	//if ToB {
+	//	ToBPrint("[%v %v handleAppendEntries] success, now lastIndex:%v,actual len:%v, committed:%v, apply:%v", r.State, r.id, r.RaftLog.LastIndex(), len(r.RaftLog.entries), r.RaftLog.committed, r.RaftLog.applied)
+	//	r.DebugEntries(msg.Entries)
+	//	for i, entry := range r.RaftLog.entries {
+	//		fmt.Printf("%v:%v;", i, entry)
+	//	}
+	//	fmt.Println()
+	//}
 	// 成功的话，返回index+1，作为下一轮的nextIndex
 	msg.Index = r.RaftLog.LastIndex()
 	r.msgs = append(r.msgs, msg)
@@ -1050,7 +1056,7 @@ func (r *Raft) removeNode(id uint64) {
 // 加载原先的HardState
 func (r *Raft) loadState(hs pb.HardState) bool {
 	if hs.Commit < r.RaftLog.committed || hs.Commit > r.RaftLog.LastIndex() {
-		fmt.Println("---------", hs.Commit, r.RaftLog.committed)
+		//fmt.Println("---------", hs.Commit, r.RaftLog.committed)
 		return false
 	}
 	r.RaftLog.committed = hs.Commit
