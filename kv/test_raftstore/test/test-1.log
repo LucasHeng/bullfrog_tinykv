@@ -1,0 +1,811 @@
+=== RUN   TestBasicConfChange3B
+2022/07/10 23:58:52.086248 node.go:193: [0;37m[info] start raft store node, storeID: 3[0m
+2022/07/10 23:58:52.086474 peer.go:42: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 >  create peer with ID 3[0m
+2022/07/10 23:58:52 come here:{5 0 5 {} [] 0}
+2022/07/10 23:58:52.086562 raftstore.go:180: [0;37m[info] start store 3, region_count 1, tombstone_count 0, takes 181.2µs[0m
+2022/07/10 23:58:52.087885 node.go:193: [0;37m[info] start raft store node, storeID: 4[0m
+2022/07/10 23:58:52.087972 peer.go:42: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 >  create peer with ID 4[0m
+2022/07/10 23:58:52 come here:{5 0 5 {} [] 0}
+2022/07/10 23:58:52.088013 raftstore.go:180: [0;37m[info] start store 4, region_count 1, tombstone_count 0, takes 62.8µs[0m
+2022/07/10 23:58:52.088255 node.go:193: [0;37m[info] start raft store node, storeID: 5[0m
+2022/07/10 23:58:52.088315 peer.go:42: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 >  create peer with ID 5[0m
+2022/07/10 23:58:52 come here:{5 0 5 {} [] 0}
+2022/07/10 23:58:52.088342 raftstore.go:180: [0;37m[info] start store 5, region_count 1, tombstone_count 0, takes 42.1µs[0m
+2022/07/10 23:58:52.089211 node.go:193: [0;37m[info] start raft store node, storeID: 1[0m
+2022/07/10 23:58:52.089270 peer.go:42: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 >  create peer with ID 1[0m
+2022/07/10 23:58:52 come here:{5 0 5 {} [] 0}
+2022/07/10 23:58:52.089299 raftstore.go:180: [0;37m[info] start store 1, region_count 1, tombstone_count 0, takes 43.8µs[0m
+2022/07/10 23:58:52.089920 node.go:193: [0;37m[info] start raft store node, storeID: 2[0m
+2022/07/10 23:58:52.089978 peer.go:42: [0;37m[info] region id:1 region_epoch:<conf_ver:1 version:1 > peers:<id:1 store_id:1 > peers:<id:2 store_id:2 > peers:<id:3 store_id:3 > peers:<id:4 store_id:4 > peers:<id:5 store_id:5 >  create peer with ID 2[0m
+2022/07/10 23:58:52 come here:{5 0 5 {} [] 0}
+2022/07/10 23:58:52.090006 raftstore.go:180: [0;37m[info] start store 2, region_count 1, tombstone_count 0, takes 42.5µs[0m
+2022/07/10 23:58:52.695129 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 1} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5[0m
+2022/07/10 23:58:52.695256 raft.go:281: [0;37m[info] Node:4 sendappend committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.695282 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 2} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5[0m
+2022/07/10 23:58:52.695298 raft.go:281: [0;37m[info] Node:4 sendappend committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.695316 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 3} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5[0m
+2022/07/10 23:58:52.695336 raft.go:281: [0;37m[info] Node:4 sendappend committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.695369 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 5} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 5[0m
+2022/07/10 23:58:52.695379 raft.go:281: [0;37m[info] Node:4 sendappend committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 5} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 5 Index:5 Entries:[{6 6 }] Commit:5 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.698189 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.698207 raft.go:927: [0;37m[info] Node:5 committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 2} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 5 Index:5 Entries:[{6 6 }] Commit:5 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.698226 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.698238 raft.go:927: [0;37m[info] Node:2 committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 1} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 5 Index:5 Entries:[{6 6 }] Commit:5 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52 HandleAppendEntries:{Node 3} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 5 Index:5 Entries:[{6 6 }] Commit:5 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.698316 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.698356 raft.go:927: [0;37m[info] Node:1 committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.698345 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.698574 raft.go:927: [0;37m[info] Node:3 committed: 5	applied:  5
+#0: {EntryType:EntryNormal Term:6 Index:6 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:2 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:3 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 Node:4 commitTo:6 with apply:5  precommit:5  stable:6 and LastIndex:6
+2022/07/10 23:58:52.701272 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6[0m
+2022/07/10 23:58:52.701286 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.701291 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6[0m
+2022/07/10 23:58:52.701297 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.701302 log.go:311: [0;37m[info] Node:4 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52.701328 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 5} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 6[0m
+2022/07/10 23:58:52.701336 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.701340 log.go:311: [0;37m[info] Node:4 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52.701350 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 1} {Appendmsg: Idx: 5 LogTerm: 5 ents: [term:6 index:6 ]} with committed: 6[0m
+2022/07/10 23:58:52.701356 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:1 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52.701370 log.go:311: [0;37m[info] Node:4 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52 Node:4 Ready recieve ss:<nil> hs:{6 4 6 {} [] 0} ents:[{6 6 }]
+2022/07/10 23:58:52 HandleAppendEntries:{Node 3} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 6 Index:6 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.704091 raft.go:927: [0;37m[info] Node:3 committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.704127 log.go:311: [0;37m[info] Node:3 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 5} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 5 Index:5 Entries:[{6 6 }] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.704186 raft.go:927: [0;37m[info] Node:5 committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.704217 log.go:311: [0;37m[info] Node:5 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 2} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 6 Index:6 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.704293 raft.go:927: [0;37m[info] Node:2 committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.704306 log.go:311: [0;37m[info] Node:2 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52 Node:2 Ready recieve ss:<nil> hs:{6 4 6 {} [] 0} ents:[{6 6 }]
+2022/07/10 23:58:52 HandleAppendEntries:{Node 1} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 5 Index:5 Entries:[{6 6 }] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.704460 raft.go:927: [0;37m[info] Node:1 committed: 6	applied:  5
+[0m
+2022/07/10 23:58:52.704486 log.go:311: [0;37m[info] Node:1 lo:6 hi:7 stable:6[0m
+2022/07/10 23:58:52 Node:1 Ready recieve ss:<nil> hs:{6 4 6 {} [] 0} ents:[{6 6 }]
+2022/07/10 23:58:52 Node:3 Ready recieve ss:<nil> hs:{6 4 6 {} [] 0} ents:[{6 6 }]
+2022/07/10 23:58:52 Node:5 Ready recieve ss:<nil> hs:{6 4 6 {} [] 0} ents:[{6 6 }]
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:5 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:2 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:5 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:3 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 4} recieve from Node:1 {msg:MsgAppendResponse Term: 6; logTerm: 0 Index:6 Entries:[] Commit:0 Reject:false} in {term : 6} with {state: StateLeader}
+2022/07/10 23:58:52 handleheartbeat:{Node 1} recieve from Node:4 {msg:MsgHeartbeat Term: 6; logTerm: 0 Index:0 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 2} recieve from Node:4 {msg:MsgHeartbeat Term: 6; logTerm: 0 Index:0 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 3} recieve from Node:4 {msg:MsgHeartbeat Term: 6; logTerm: 0 Index:0 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 5} recieve from Node:4 {msg:MsgHeartbeat Term: 6; logTerm: 0 Index:0 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.796949 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6[0m
+2022/07/10 23:58:52.796996 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52.797007 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 5} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6[0m
+2022/07/10 23:58:52.797012 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52.797017 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6[0m
+2022/07/10 23:58:52.797022 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52.797035 raft.go:278: [0;37m[info] {Node 4} in {term: 6} send {Node: 1} {Appendmsg: Idx: 6 LogTerm: 6 ents: []} with committed: 6[0m
+2022/07/10 23:58:52.797039 raft.go:281: [0;37m[info] Node:4 sendappend committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 5} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 6 Index:6 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52 {Node: 4 in term:6 state: StateCandidate} send {Node: 1 in term: 7} m.Index:6,m.LogTerm:6,true
+2022/07/10 23:58:52 HandleAppendEntries:{Node 1} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 6 Index:6 Entries:[] Commit:6 Reject:false} in {term : 7} with {state: StateCandidate}
+2022/07/10 23:58:52.798161 raft.go:927: [0;37m[info] Node:5 committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 3} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 6 Index:6 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.798379 raft.go:927: [0;37m[info] Node:3 committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 2} recieve from Node:4 {msg:MsgAppend Term: 6; logTerm: 6 Index:6 Entries:[] Commit:6 Reject:false} in {term : 6} with {state: StateFollower}
+2022/07/10 23:58:52.798465 raft.go:927: [0;37m[info] Node:2 committed: 6	applied:  6
+[0m
+2022/07/10 23:58:52.806237 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:7 index:7 ]} with committed: 6[0m
+2022/07/10 23:58:52.806283 raft.go:281: [0;37m[info] Node:1 sendappend committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.806296 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:7 index:7 ]} with committed: 6[0m
+2022/07/10 23:58:52.806303 raft.go:281: [0;37m[info] Node:1 sendappend committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.806310 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:7 index:7 ]} with committed: 6[0m
+2022/07/10 23:58:52.806316 raft.go:281: [0;37m[info] Node:1 sendappend committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.806322 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:7 index:7 ]} with committed: 6[0m
+2022/07/10 23:58:52.806328 raft.go:281: [0;37m[info] Node:1 sendappend committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 6 Index:6 Entries:[{7 7 }] Commit:6 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.808502 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.808519 raft.go:927: [0;37m[info] Node:2 committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 6 Index:6 Entries:[{7 7 }] Commit:6 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.808609 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.808638 raft.go:927: [0;37m[info] Node:3 committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 6 Index:6 Entries:[{7 7 }] Commit:6 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.808720 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.808730 raft.go:927: [0;37m[info] Node:5 committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 6 Index:6 Entries:[{7 7 }] Commit:6 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.810371 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:52.810383 raft.go:927: [0;37m[info] Node:4 committed: 6	applied:  6
+#0: {EntryType:EntryNormal Term:7 Index:7 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 Node:1 commitTo:7 with apply:6  precommit:6  stable:7 and LastIndex:7
+2022/07/10 23:58:52.812508 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 7 LogTerm: 7 ents: []} with committed: 7[0m
+2022/07/10 23:58:52.812520 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.812538 log.go:311: [0;37m[info] Node:1 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52.812590 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:7 index:7 ]} with committed: 7[0m
+2022/07/10 23:58:52.812616 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.812626 log.go:311: [0;37m[info] Node:1 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52.812636 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 6 LogTerm: 6 ents: [term:7 index:7 ]} with committed: 7[0m
+2022/07/10 23:58:52.812641 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.812646 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 7 ents: []} with committed: 7[0m
+2022/07/10 23:58:52.812650 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.812655 log.go:311: [0;37m[info] Node:1 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52 Node:1 Ready recieve ss:<nil> hs:{7 1 7 {} [] 0} ents:[{7 7 }]
+2022/07/10 23:58:52 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 6 Index:6 Entries:[{7 7 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.813530 raft.go:927: [0;37m[info] Node:3 committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.813541 log.go:311: [0;37m[info] Node:3 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 6 Index:6 Entries:[{7 7 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.813582 raft.go:927: [0;37m[info] Node:4 committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.813591 log.go:311: [0;37m[info] Node:4 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52.813584 raft.go:927: [0;37m[info] Node:5 committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.813629 log.go:311: [0;37m[info] Node:5 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52 Node:3 Ready recieve ss:<nil> hs:{7 1 7 {} [] 0} ents:[{7 7 }]
+2022/07/10 23:58:52 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.813673 raft.go:927: [0;37m[info] Node:2 committed: 7	applied:  6
+[0m
+2022/07/10 23:58:52.813685 log.go:311: [0;37m[info] Node:2 lo:7 hi:8 stable:7[0m
+2022/07/10 23:58:52 Node:2 Ready recieve ss:<nil> hs:{7 1 7 {} [] 0} ents:[{7 7 }]
+2022/07/10 23:58:52 Node:4 Ready recieve ss:<nil> hs:{7 1 7 {} [] 0} ents:[{7 7 }]
+2022/07/10 23:58:52 Node:5 Ready recieve ss:<nil> hs:{7 1 7 {} [] 0} ents:[{7 7 }]
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 3} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 4} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.895585 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 7 LogTerm: 7 ents: []} with committed: 7[0m
+2022/07/10 23:58:52.895653 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52.898155 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 7 ents: []} with committed: 7[0m
+2022/07/10 23:58:52.898213 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.898228 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 7 LogTerm: 7 ents: []} with committed: 7[0m
+2022/07/10 23:58:52.898250 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52.898262 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 7 ents: []} with committed: 7[0m
+2022/07/10 23:58:52.898269 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52.898244 raft.go:927: [0;37m[info] Node:3 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.899624 raft.go:927: [0;37m[info] Node:4 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.899784 raft.go:927: [0;37m[info] Node:5 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.899840 raft.go:927: [0;37m[info] Node:2 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:7 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:52 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.996584 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:52 handleheartbeat:{Node 4} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.996642 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52 handleheartbeat:{Node 3} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:52.996814 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:52.997103 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.997199 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:52.997251 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:52.997274 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:52.997302 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.000323 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53.000437 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:53.000459 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53.000475 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53.000495 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:53.000527 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53.000542 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.000561 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:53.000613 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.000640 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53.000678 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 7[0m
+2022/07/10 23:58:53.000713 raft.go:281: [0;37m[info] Node:1 sendappend committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53.000624 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.000804 raft.go:927: [0;37m[info] Node:5 committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.000592 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.000945 raft.go:927: [0;37m[info] Node:2 committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.000583 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.001122 raft.go:927: [0;37m[info] Node:3 committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.000646 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.001266 raft.go:927: [0;37m[info] Node:4 committed: 7	applied:  7
+#0: {EntryType:EntryConfChange Term:7 Index:8 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 1 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.004938 raft.go:927: [0;37m[info] Node:3 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.005078 raft.go:927: [0;37m[info] Node:2 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 Node:1 commitTo:8 with apply:7  precommit:7  stable:8 and LastIndex:8
+2022/07/10 23:58:53.005304 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 8 LogTerm: 7 ents: []} with committed: 8[0m
+2022/07/10 23:58:53.005351 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.005374 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 8 LogTerm: 7 ents: []} with committed: 8[0m
+2022/07/10 23:58:53.005383 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.005396 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.005458 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 8[0m
+2022/07/10 23:58:53.005539 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.005558 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:7 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.005583 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 7 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:8 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\001\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 8[0m
+2022/07/10 23:58:53.005590 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.005595 raft.go:927: [0;37m[info] Node:4 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53.005604 log.go:311: [0;37m[info] Node:1 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 Node:1 Ready recieve ss:<nil> hs:{7 1 8 {} [] 0} ents:[{7 8 }]
+2022/07/10 23:58:53.005478 raft.go:927: [0;37m[info] Node:5 committed: 7	applied:  7
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.008690 raft.go:927: [0;37m[info] Node:2 committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.008721 log.go:311: [0;37m[info] Node:2 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 Node:2 Ready recieve ss:<nil> hs:{7 1 8 {} [] 0} ents:[{7 8 }]
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.008850 raft.go:927: [0;37m[info] Node:3 committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.008866 log.go:311: [0;37m[info] Node:3 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 Node:3 Ready recieve ss:<nil> hs:{7 1 8 {} [] 0} ents:[{7 8 }]
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.009077 raft.go:927: [0;37m[info] Node:4 committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.009113 log.go:311: [0;37m[info] Node:4 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 Node:4 Ready recieve ss:<nil> hs:{7 1 8 {} [] 0} ents:[{7 8 }]
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:7 Entries:[{7 8 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.009218 raft.go:927: [0;37m[info] Node:5 committed: 8	applied:  7
+[0m
+2022/07/10 23:58:53.009228 log.go:311: [0;37m[info] Node:5 lo:8 hi:9 stable:8[0m
+2022/07/10 23:58:53 Node:5 Ready recieve ss:<nil> hs:{7 1 8 {} [] 0} ents:[{7 8 }]
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.011197 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:2 version:1  ignore it[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.012656 peer_msg_handler.go:817: [0;37m[info] [region 1] 2 starts destroy[0m
+2022/07/10 23:58:53.012711 peer.go:204: [0;37m[info] [region 1] 2 begin to destroy[0m
+2022/07/10 23:58:53.012736 peer_storage.go:298: [0;37m[info] [region 1] clear peer 1 meta key 1 apply key 1 raft key and 3 raft logs, takes 9.9µs[0m
+2022/07/10 23:58:53.012702 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:2 version:1  ignore it[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.017764 peer.go:232: [0;37m[info] [region 1] 2 destroy itself, takes 5.0483ms[0m
+2022/07/10 23:58:53.017847 region_task.go:137: [0;37m[info] succeed in deleting data in range. [regionId: 1, startKey: , endKey: ][0m
+2022/07/10 23:58:53 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 handleheartbeat:{Node 3} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 handleheartbeat:{Node 4} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.097438 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 7 ents: []} with committed: 8[0m
+2022/07/10 23:58:53.097496 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53.098913 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 8 LogTerm: 7 ents: []} with committed: 8[0m
+2022/07/10 23:58:53.098961 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.098972 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 7 ents: []} with committed: 8[0m
+2022/07/10 23:58:53.098989 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53.098984 raft.go:927: [0;37m[info] Node:5 committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.101262 raft.go:927: [0;37m[info] Node:3 committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.101316 raft.go:927: [0;37m[info] Node:4 committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:8 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 handleheartbeat:{Node 3} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.197247 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 8[0m
+2022/07/10 23:58:53.197279 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+#0: {EntryType:EntryConfChange Term:7 Index:9 Data:[8 1 16 3 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 2 16 1 26 12 8 1 18 8 8 1 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.197298 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 8[0m
+2022/07/10 23:58:53.197326 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+#0: {EntryType:EntryConfChange Term:7 Index:9 Data:[8 1 16 3 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 2 16 1 26 12 8 1 18 8 8 1 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.197351 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 8[0m
+2022/07/10 23:58:53.197391 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+#0: {EntryType:EntryConfChange Term:7 Index:9 Data:[8 1 16 3 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 2 16 1 26 12 8 1 18 8 8 1 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 handleheartbeat:{Node 4} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.200200 log.go:311: [0;37m[info] Node:1 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53.200285 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 8[0m
+2022/07/10 23:58:53.200301 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53.200312 log.go:311: [0;37m[info] Node:1 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53.200328 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 8[0m
+2022/07/10 23:58:53.200333 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.200358 log.go:311: [0;37m[info] Node:1 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.200373 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.200384 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 8[0m
+2022/07/10 23:58:53.200415 raft.go:281: [0;37m[info] Node:1 sendappend committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.200481 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.200498 raft.go:927: [0;37m[info] Node:5 committed: 8	applied:  8
+#0: {EntryType:EntryConfChange Term:7 Index:9 Data:[8 1 16 3 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 2 16 1 26 12 8 1 18 8 8 1 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.200389 raft.go:927: [0;37m[info] Node:3 committed: 8	applied:  8
+#0: {EntryType:EntryConfChange Term:7 Index:9 Data:[8 1 16 3 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 2 16 1 26 12 8 1 18 8 8 1 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.200365 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.200579 raft.go:927: [0;37m[info] Node:4 committed: 8	applied:  8
+#0: {EntryType:EntryConfChange Term:7 Index:9 Data:[8 1 16 3 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 2 16 1 26 12 8 1 18 8 8 1 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.203435 raft.go:927: [0;37m[info] Node:3 committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.203575 raft.go:927: [0;37m[info] Node:4 committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 Node:1 commitTo:9 with apply:8  precommit:8  stable:9 and LastIndex:9
+2022/07/10 23:58:53.203733 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 9 LogTerm: 7 ents: []} with committed: 9[0m
+2022/07/10 23:58:53.203773 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:8 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.203796 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 9 LogTerm: 7 ents: []} with committed: 9[0m
+2022/07/10 23:58:53.203855 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  8
+[0m
+2022/07/10 23:58:53.203880 log.go:311: [0;37m[info] Node:1 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53.203929 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 8 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:9 data:"\010\001\020\003\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\002\020\001\032\014\010\001\022\010\010\001\022\004\010\003\020\003" ]} with committed: 9[0m
+2022/07/10 23:58:53.203972 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  8
+[0m
+2022/07/10 23:58:53.203994 log.go:311: [0;37m[info] Node:1 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53 Node:1 Ready recieve ss:<nil> hs:{7 1 9 {} [] 0} ents:[{7 9 }]
+2022/07/10 23:58:53.203839 raft.go:927: [0;37m[info] Node:5 committed: 8	applied:  8
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 HandleAppendEntries:{Node 3} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.207836 raft.go:927: [0;37m[info] Node:4 committed: 9	applied:  8
+[0m
+2022/07/10 23:58:53.207865 log.go:311: [0;37m[info] Node:4 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:8 Entries:[{7 9 }] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.207919 raft.go:927: [0;37m[info] Node:5 committed: 9	applied:  8
+[0m
+2022/07/10 23:58:53.207941 log.go:311: [0;37m[info] Node:5 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53.207845 raft.go:927: [0;37m[info] Node:3 committed: 9	applied:  8
+[0m
+2022/07/10 23:58:53.208042 log.go:311: [0;37m[info] Node:3 lo:9 hi:10 stable:9[0m
+2022/07/10 23:58:53 Node:4 Ready recieve ss:<nil> hs:{7 1 9 {} [] 0} ents:[{7 9 }]
+2022/07/10 23:58:53 Node:5 Ready recieve ss:<nil> hs:{7 1 9 {} [] 0} ents:[{7 9 }]
+2022/07/10 23:58:53 Node:3 Ready recieve ss:<nil> hs:{7 1 9 {} [] 0} ents:[{7 9 }]
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.209061 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:3 version:1  ignore it[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.213036 peer_msg_handler.go:817: [0;37m[info] [region 1] 3 starts destroy[0m
+2022/07/10 23:58:53.213091 peer.go:204: [0;37m[info] [region 1] 3 begin to destroy[0m
+2022/07/10 23:58:53.213108 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:3 version:1  ignore it[0m
+2022/07/10 23:58:53.213116 peer_storage.go:298: [0;37m[info] [region 1] clear peer 1 meta key 1 apply key 1 raft key and 4 raft logs, takes 10.3µs[0m
+2022/07/10 23:58:53.218338 peer.go:232: [0;37m[info] [region 1] 3 destroy itself, takes 5.2427ms[0m
+2022/07/10 23:58:53.218419 region_task.go:137: [0;37m[info] succeed in deleting data in range. [regionId: 1, startKey: , endKey: ][0m
+2022/07/10 23:58:53 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 handleheartbeat:{Node 4} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.297927 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 9 LogTerm: 7 ents: []} with committed: 9[0m
+2022/07/10 23:58:53.297987 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53.299386 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 9 LogTerm: 7 ents: []} with committed: 9[0m
+2022/07/10 23:58:53.299434 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.299505 raft.go:927: [0;37m[info] Node:4 committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.301836 raft.go:927: [0;37m[info] Node:5 committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:9 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 handleheartbeat:{Node 4} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.396456 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 9 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:10 data:"\010\001\020\004\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\003\020\001\032\014\010\001\022\010\010\001\022\004\010\004\020\004" ]} with committed: 9[0m
+2022/07/10 23:58:53.396499 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  9
+#0: {EntryType:EntryConfChange Term:7 Index:10 Data:[8 1 16 4 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 3 16 1 26 12 8 1 18 8 8 1 18 4 8 4 16 4] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.396530 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 9 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:10 data:"\010\001\020\004\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\003\020\001\032\014\010\001\022\010\010\001\022\004\010\004\020\004" ]} with committed: 9[0m
+2022/07/10 23:58:53.396552 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  9
+#0: {EntryType:EntryConfChange Term:7 Index:10 Data:[8 1 16 4 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 3 16 1 26 12 8 1 18 8 8 1 18 4 8 4 16 4] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.397578 log.go:311: [0;37m[info] Node:1 lo:10 hi:11 stable:10[0m
+2022/07/10 23:58:53.397640 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 9 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:10 data:"\010\001\020\004\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\003\020\001\032\014\010\001\022\010\010\001\022\004\010\004\020\004" ]} with committed: 9[0m
+2022/07/10 23:58:53.397650 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[{7 10 }] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.397799 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.397819 raft.go:927: [0;37m[info] Node:4 committed: 9	applied:  9
+#0: {EntryType:EntryConfChange Term:7 Index:10 Data:[8 1 16 4 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 3 16 1 26 12 8 1 18 8 8 1 18 4 8 4 16 4] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[{7 10 }] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.397937 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.397955 raft.go:927: [0;37m[info] Node:5 committed: 9	applied:  9
+#0: {EntryType:EntryConfChange Term:7 Index:10 Data:[8 1 16 4 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 3 16 1 26 12 8 1 18 8 8 1 18 4 8 4 16 4] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.400054 log.go:311: [0;37m[info] Node:1 lo:10 hi:11 stable:10[0m
+2022/07/10 23:58:53.400142 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 9 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:10 data:"\010\001\020\004\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\003\020\001\032\014\010\001\022\010\010\001\022\004\010\004\020\004" ]} with committed: 9[0m
+2022/07/10 23:58:53.400158 raft.go:281: [0;37m[info] Node:1 sendappend committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[{7 10 }] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.400676 raft.go:927: [0;37m[info] Node:4 committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:10 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 Node:1 commitTo:10 with apply:9  precommit:9  stable:10 and LastIndex:10
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[{7 10 }] Commit:9 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.402915 log.go:311: [0;37m[info] Node:1 lo:10 hi:11 stable:10[0m
+2022/07/10 23:58:53.403036 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 4} {Appendmsg: Idx: 9 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:10 data:"\010\001\020\004\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\003\020\001\032\014\010\001\022\010\010\001\022\004\010\004\020\004" ]} with committed: 10[0m
+2022/07/10 23:58:53.403076 raft.go:281: [0;37m[info] Node:1 sendappend committed: 10	applied:  9
+[0m
+2022/07/10 23:58:53.403093 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 10 LogTerm: 7 ents: []} with committed: 10[0m
+2022/07/10 23:58:53.403100 raft.go:281: [0;37m[info] Node:1 sendappend committed: 10	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:4 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:10 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.403141 log.go:311: [0;37m[info] Node:1 lo:10 hi:11 stable:10[0m
+2022/07/10 23:58:53 Node:1 Ready recieve ss:<nil> hs:{7 1 10 {} [] 0} ents:[{7 10 }]
+2022/07/10 23:58:53.402997 raft.go:927: [0;37m[info] Node:5 committed: 9	applied:  9
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 4} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:9 Entries:[{7 10 }] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.405926 raft.go:927: [0;37m[info] Node:4 committed: 10	applied:  9
+[0m
+2022/07/10 23:58:53.405954 log.go:311: [0;37m[info] Node:4 lo:10 hi:11 stable:10[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:10 Entries:[] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.405994 raft.go:927: [0;37m[info] Node:5 committed: 10	applied:  9
+[0m
+2022/07/10 23:58:53.406005 log.go:311: [0;37m[info] Node:5 lo:10 hi:11 stable:10[0m
+2022/07/10 23:58:53 Node:5 Ready recieve ss:<nil> hs:{7 1 10 {} [] 0} ents:[{7 10 }]
+2022/07/10 23:58:53 Node:4 Ready recieve ss:<nil> hs:{7 1 10 {} [] 0} ents:[{7 10 }]
+2022/07/10 23:58:53.407165 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:4 version:1  ignore it[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:10 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.408960 peer_msg_handler.go:817: [0;37m[info] [region 1] 4 starts destroy[0m
+2022/07/10 23:58:53.409011 peer.go:204: [0;37m[info] [region 1] 4 begin to destroy[0m
+2022/07/10 23:58:53.409040 peer_storage.go:298: [0;37m[info] [region 1] clear peer 1 meta key 1 apply key 1 raft key and 5 raft logs, takes 12.6µs[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:10 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.409219 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:4 version:1  ignore it[0m
+2022/07/10 23:58:53.412809 peer.go:232: [0;37m[info] [region 1] 4 destroy itself, takes 3.7932ms[0m
+2022/07/10 23:58:53.412878 region_task.go:137: [0;37m[info] succeed in deleting data in range. [regionId: 1, startKey: , endKey: ][0m
+2022/07/10 23:58:53 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.497186 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 10 LogTerm: 7 ents: []} with committed: 10[0m
+2022/07/10 23:58:53.497245 raft.go:281: [0;37m[info] Node:1 sendappend committed: 10	applied:  10
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:10 Entries:[] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.499151 raft.go:927: [0;37m[info] Node:5 committed: 10	applied:  10
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:10 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 handleheartbeat:{Node 5} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.594536 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 10 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:11 data:"\010\001\020\005\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\004\020\001\032\014\010\001\022\010\010\001\022\004\010\005\020\005" ]} with committed: 10[0m
+2022/07/10 23:58:53.594563 raft.go:281: [0;37m[info] Node:1 sendappend committed: 10	applied:  10
+#0: {EntryType:EntryConfChange Term:7 Index:11 Data:[8 1 16 5 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 4 16 1 26 12 8 1 18 8 8 1 18 4 8 5 16 5] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:10 Entries:[{7 11 }] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.597523 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.597547 raft.go:927: [0;37m[info] Node:5 committed: 10	applied:  10
+#0: {EntryType:EntryConfChange Term:7 Index:11 Data:[8 1 16 5 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 4 16 1 26 12 8 1 18 8 8 1 18 4 8 5 16 5] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:53.597695 log.go:311: [0;37m[info] Node:1 lo:11 hi:12 stable:11[0m
+2022/07/10 23:58:53.597777 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 10 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:11 data:"\010\001\020\005\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\004\020\001\032\014\010\001\022\010\010\001\022\004\010\005\020\005" ]} with committed: 10[0m
+2022/07/10 23:58:53.597794 raft.go:281: [0;37m[info] Node:1 sendappend committed: 10	applied:  10
+[0m
+2022/07/10 23:58:53 HandleAppendResponse:{Node 1} recieve from Node:5 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:11 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 Node:1 commitTo:11 with apply:10  precommit:10  stable:11 and LastIndex:11
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:10 Entries:[{7 11 }] Commit:10 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.601387 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 5} {Appendmsg: Idx: 11 LogTerm: 7 ents: []} with committed: 11[0m
+2022/07/10 23:58:53.601424 raft.go:281: [0;37m[info] Node:1 sendappend committed: 11	applied:  10
+[0m
+2022/07/10 23:58:53.601435 log.go:311: [0;37m[info] Node:1 lo:11 hi:12 stable:11[0m
+2022/07/10 23:58:53 Node:1 Ready recieve ss:<nil> hs:{7 1 11 {} [] 0} ents:[{7 11 }]
+2022/07/10 23:58:53.601417 raft.go:927: [0;37m[info] Node:5 committed: 10	applied:  10
+[0m
+2022/07/10 23:58:53 HandleAppendEntries:{Node 5} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:11 Entries:[] Commit:11 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.603397 raft.go:927: [0;37m[info] Node:5 committed: 11	applied:  10
+[0m
+2022/07/10 23:58:53.603418 log.go:311: [0;37m[info] Node:5 lo:11 hi:12 stable:11[0m
+2022/07/10 23:58:53 Node:5 Ready recieve ss:<nil> hs:{7 1 11 {} [] 0} ents:[{7 11 }]
+2022/07/10 23:58:53.606206 peer_msg_handler.go:817: [0;37m[info] [region 1] 5 starts destroy[0m
+2022/07/10 23:58:53.606282 peer.go:204: [0;37m[info] [region 1] 5 begin to destroy[0m
+2022/07/10 23:58:53.606308 peer_storage.go:298: [0;37m[info] [region 1] clear peer 1 meta key 1 apply key 1 raft key and 6 raft logs, takes 10.7µs[0m
+2022/07/10 23:58:53.606218 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:5 version:1  ignore it[0m
+2022/07/10 23:58:53.606427 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:5 version:1  ignore it[0m
+2022/07/10 23:58:53.610862 peer.go:232: [0;37m[info] [region 1] 5 destroy itself, takes 4.5756ms[0m
+2022/07/10 23:58:53.610924 region_task.go:137: [0;37m[info] succeed in deleting data in range. [regionId: 1, startKey: , endKey: ][0m
+2022/07/10 23:58:53.701248 test_test.go:552: [0;37m[info] lab 3b xxxxx[0m
+2022/07/10 23:58:53 HandlePropose:{Node 1} recieve from Node:1 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:5 version:1 > > requests:<cmd_type:Put put:<cf:"default" key:"k1" value:"v1" > > }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 Node:1 commitTo:12 with apply:11  precommit:11  stable:11 and LastIndex:12
+2022/07/10 23:58:53 Node:1 Ready recieve ss:<nil> hs:{7 1 12 {} [] 0} ents:[{7 12 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:5 version:1 > > requests:<cmd_type:Put put:<cf:"default" key:"k1" value:"v1" > > }]
+2022/07/10 23:58:53 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53 Node:1 commitTo:13 with apply:12  precommit:12  stable:12 and LastIndex:13
+2022/07/10 23:58:53 Node:1 Ready recieve ss:<nil> hs:{7 1 13 {} [] 0} ents:[{7 13 }]
+2022/07/10 23:58:53.895171 peer.go:52: [0;37m[info] [region 1] replicates peer with ID 2[0m
+2022/07/10 23:58:53 come here:{0 0 0 {} [] 0}
+2022/07/10 23:58:53 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:0 Reject:false} in {term : 0} with {state: StateFollower}
+2022/07/10 23:58:53 HandlePropose:{Node 1} recieve from Node:1 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Put put:<cf:"default" key:"k2" value:"v2" > > }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:53.899347 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.899361 peer_storage.go:182: [0;37m[info] [region 1] 1 requesting snapshot[0m
+2022/07/10 23:58:53.899874 snap.go:549: [0;37m[info] region 1 scan snapshot /tmp/test-raftstore3221589745/snap/gen_1_7_13_(default|write|lock).sst, key count 1, size 12[0m
+2022/07/10 23:58:53.901880 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:53.993899 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:53.993990 raft.go:254: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 0 LogTerm: 0 snapmeta: conf_state:<nodes:1 nodes:2 > index:13 term:7 } with committed: 13[0m
+2022/07/10 23:58:53.994012 raft.go:281: [0;37m[info] Node:1 sendappend committed: 13	applied:  13
+[0m
+2022/07/10 23:58:54.003433 raft.go:1063: [0;37m[info] data:"\n\024\010\001\"\004\010\006\020\001*\004\010\001\020\001*\004\010\002\020\002\020\270\001*%\n\022\n\007default\020\270\001\030\302\373\201\244\003\n\007\n\005write\n\006\n\004lock" metadata:<conf_state:<nodes:1 nodes:2 > index:13 term:7 > [0m
+2022/07/10 23:58:54.003466 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.003484 raft.go:1080: [0;37m[info] data:"\n\024\010\001\"\004\010\006\020\001*\004\010\001\020\001*\004\010\002\020\002\020\270\001*%\n\022\n\007default\020\270\001\030\302\373\201\244\003\n\007\n\005write\n\006\n\004lock" metadata:<conf_state:<nodes:1 nodes:2 > index:13 term:7 > [0m
+2022/07/10 23:58:54.003494 log.go:462: [0;37m[info] log [&{0xc00007fef0 0 0 0 [] <nil> 2}] starts to restore snapshot [index: 13, term: 7][0m
+2022/07/10 23:58:54.003499 raft.go:1035: [0;37m[info] Node:2 [commit: 13] restored snapshot [index: 13, term: 7][0m
+2022/07/10 23:58:54.003511 raft.go:1059: [0;37m[info] commitindex:13 snap:data:"\n\024\010\001\"\004\010\006\020\001*\004\010\001\020\001*\004\010\002\020\002\020\270\001*%\n\022\n\007default\020\270\001\030\302\373\201\244\003\n\007\n\005write\n\006\n\004lock" metadata:<conf_state:<nodes:1 nodes:2 > index:13 term:7 > [0m
+2022/07/10 23:58:54.003517 peer_storage.go:346: [0;37m[info] [region 1] 2 begin to apply snapshot[0m
+2022/07/10 23:58:54.003564 region_task.go:93: [0;37m[info] begin apply snap data. [regionId: 1][0m
+2022/07/10 23:58:54.003606 region_task.go:137: [0;37m[info] succeed in deleting data in range. [regionId: 1, startKey: , endKey: ][0m
+2022/07/10 23:58:54.014535 snap.go:700: [0;37m[info] apply snapshot ingested 1 tables[0m
+2022/07/10 23:58:54.014569 region_task.go:117: [0;37m[info] applying new data. [regionId: 1, timeTakes: 10.9006ms][0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:13 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54.019847 log.go:311: [0;37m[info] Node:1 lo:14 hi:15 stable:14[0m
+2022/07/10 23:58:54.019874 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 13 LogTerm: 7 ents: [term:7 index:14 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\006\020\001\022\025\010\003\"\021\n\007default\022\002k2\032\002v2" ]} with committed: 13[0m
+2022/07/10 23:58:54.019882 raft.go:281: [0;37m[info] Node:1 sendappend committed: 13	applied:  13
+[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:13 Entries:[{7 14 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Put put:<cf:"default" key:"k2" value:"v2" > > }] Commit:13 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.020876 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.020893 raft.go:927: [0;37m[info] Node:2 committed: 13	applied:  13
+#0: {EntryType:EntryNormal Term:7 Index:14 Data:[10 14 8 1 18 4 8 1 16 1 34 4 8 6 16 1 18 21 8 3 34 17 10 7 100 101 102 97 117 108 116 18 2 107 50 26 2 118 50] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:14 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 Node:1 commitTo:14 with apply:13  precommit:13  stable:14 and LastIndex:14
+2022/07/10 23:58:54.023007 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 14 LogTerm: 7 ents: []} with committed: 14[0m
+2022/07/10 23:58:54.023013 raft.go:281: [0;37m[info] Node:1 sendappend committed: 14	applied:  13
+[0m
+2022/07/10 23:58:54.023019 log.go:311: [0;37m[info] Node:1 lo:14 hi:15 stable:14[0m
+2022/07/10 23:58:54 Node:1 Ready recieve ss:<nil> hs:{7 1 14 {} [] 0} ents:[{7 14 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Put put:<cf:"default" key:"k2" value:"v2" > > }]
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:14 Entries:[] Commit:14 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.024145 raft.go:927: [0;37m[info] Node:2 committed: 14	applied:  13
+[0m
+2022/07/10 23:58:54.024156 log.go:311: [0;37m[info] Node:2 lo:14 hi:15 stable:14[0m
+2022/07/10 23:58:54 Node:2 Ready recieve ss:<nil> hs:{7 0 14 {} [] 0} ents:[{7 14 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Put put:<cf:"default" key:"k2" value:"v2" > > }]
+2022/07/10 23:58:54 HandlePropose:{Node 1} recieve from Node:1 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Get get:<cf:"default" key:"k2" > > }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54.026020 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 14 LogTerm: 7 ents: [term:7 index:15 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\006\020\001\022\021\010\001\022\r\n\007default\022\002k2" ]} with committed: 14[0m
+2022/07/10 23:58:54.026037 raft.go:281: [0;37m[info] Node:1 sendappend committed: 14	applied:  14
+#0: {EntryType:EntryNormal Term:7 Index:15 Data:[10 14 8 1 18 4 8 1 16 1 34 4 8 6 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 50] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:14 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54.028239 log.go:311: [0;37m[info] Node:1 lo:15 hi:16 stable:15[0m
+2022/07/10 23:58:54.028261 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 14 LogTerm: 7 ents: [term:7 index:15 data:"\n\016\010\001\022\004\010\001\020\001\"\004\010\006\020\001\022\021\010\001\022\r\n\007default\022\002k2" ]} with committed: 14[0m
+2022/07/10 23:58:54.028268 raft.go:281: [0;37m[info] Node:1 sendappend committed: 14	applied:  14
+[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:14 Entries:[{7 15 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Get get:<cf:"default" key:"k2" > > }] Commit:14 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.028739 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.028765 raft.go:927: [0;37m[info] Node:2 committed: 14	applied:  14
+#0: {EntryType:EntryNormal Term:7 Index:15 Data:[10 14 8 1 18 4 8 1 16 1 34 4 8 6 16 1 18 17 8 1 18 13 10 7 100 101 102 97 117 108 116 18 2 107 50] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:14 Entries:[{7 15 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Get get:<cf:"default" key:"k2" > > }] Commit:14 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:15 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 Node:1 commitTo:15 with apply:14  precommit:14  stable:15 and LastIndex:15
+2022/07/10 23:58:54.031231 raft.go:927: [0;37m[info] Node:2 committed: 14	applied:  14
+[0m
+2022/07/10 23:58:54.031245 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 15 LogTerm: 7 ents: []} with committed: 15[0m
+2022/07/10 23:58:54.031297 raft.go:281: [0;37m[info] Node:1 sendappend committed: 15	applied:  14
+[0m
+2022/07/10 23:58:54.031304 log.go:311: [0;37m[info] Node:1 lo:15 hi:16 stable:15[0m
+2022/07/10 23:58:54 Node:1 Ready recieve ss:<nil> hs:{7 1 15 {} [] 0} ents:[{7 15 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Get get:<cf:"default" key:"k2" > > }]
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:15 Entries:[] Commit:15 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.033482 raft.go:927: [0;37m[info] Node:2 committed: 15	applied:  14
+[0m
+2022/07/10 23:58:54.033492 log.go:311: [0;37m[info] Node:2 lo:15 hi:16 stable:15[0m
+2022/07/10 23:58:54 Node:2 Ready recieve ss:<nil> hs:{7 0 15 {} [] 0} ents:[{7 15 header:<region_id:1 peer:<id:1 store_id:1 > region_epoch:<conf_ver:6 version:1 > > requests:<cmd_type:Get get:<cf:"default" key:"k2" > > }]
+2022/07/10 23:58:54.034454 test_test.go:567: [0;37m[info] lab 3b ccccc[0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:15 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:15 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:15 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.093786 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 15 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:16 data:"\020\003\032\034\n\016\010\001\022\004\010\001\020\001\"\004\010\006\020\001\032\n\010\001\022\006\022\004\010\003\020\003" ]} with committed: 15[0m
+2022/07/10 23:58:54.093937 raft.go:281: [0;37m[info] Node:1 sendappend committed: 15	applied:  15
+#0: {EntryType:EntryConfChange Term:7 Index:16 Data:[16 3 26 28 10 14 8 1 18 4 8 1 16 1 34 4 8 6 16 1 26 10 8 1 18 6 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54.096054 log.go:311: [0;37m[info] Node:1 lo:16 hi:17 stable:16[0m
+2022/07/10 23:58:54.096140 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 15 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:16 data:"\020\003\032\034\n\016\010\001\022\004\010\001\020\001\"\004\010\006\020\001\032\n\010\001\022\006\022\004\010\003\020\003" ]} with committed: 15[0m
+2022/07/10 23:58:54.096152 raft.go:281: [0;37m[info] Node:1 sendappend committed: 15	applied:  15
+[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:15 Entries:[{7 16 }] Commit:15 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.096219 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.096238 raft.go:927: [0;37m[info] Node:2 committed: 15	applied:  15
+#0: {EntryType:EntryConfChange Term:7 Index:16 Data:[16 3 26 28 10 14 8 1 18 4 8 1 16 1 34 4 8 6 16 1 26 10 8 1 18 6 18 4 8 3 16 3] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:16 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 Node:1 commitTo:16 with apply:15  precommit:15  stable:16 and LastIndex:16
+2022/07/10 23:58:54.097336 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 16 LogTerm: 7 ents: []} with committed: 16[0m
+2022/07/10 23:58:54.097348 raft.go:281: [0;37m[info] Node:1 sendappend committed: 16	applied:  15
+[0m
+2022/07/10 23:58:54.097354 log.go:311: [0;37m[info] Node:1 lo:16 hi:17 stable:16[0m
+2022/07/10 23:58:54 Node:1 Ready recieve ss:<nil> hs:{7 1 16 {} [] 0} ents:[{7 16 }]
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:15 Entries:[{7 16 }] Commit:15 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.097402 raft.go:927: [0;37m[info] Node:2 committed: 15	applied:  15
+[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:16 Entries:[] Commit:16 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.099681 raft.go:927: [0;37m[info] Node:2 committed: 16	applied:  15
+[0m
+2022/07/10 23:58:54.099703 log.go:311: [0;37m[info] Node:2 lo:16 hi:17 stable:16[0m
+2022/07/10 23:58:54 Node:2 Ready recieve ss:<nil> hs:{7 0 16 {} [] 0} ents:[{7 16 }]
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:16 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:16 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54.196110 peer.go:52: [0;37m[info] [region 1] replicates peer with ID 3[0m
+2022/07/10 23:58:54 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:16 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54 come here:{0 0 0 {} [] 0}
+2022/07/10 23:58:54 handleheartbeat:{Node 3} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:0 Reject:false} in {term : 0} with {state: StateFollower}
+2022/07/10 23:58:54.197493 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 16 LogTerm: 7 ents: []} with committed: 16[0m
+2022/07/10 23:58:54.197585 raft.go:281: [0;37m[info] Node:1 sendappend committed: 16	applied:  16
+[0m
+2022/07/10 23:58:54.200221 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:16 Entries:[] Commit:16 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.200279 peer_storage.go:182: [0;37m[info] [region 1] 1 requesting snapshot[0m
+2022/07/10 23:58:54.200294 raft.go:927: [0;37m[info] Node:2 committed: 16	applied:  16
+[0m
+2022/07/10 23:58:54.200844 snap.go:549: [0;37m[info] region 1 scan snapshot /tmp/test-raftstore3221589745/snap/gen_1_7_16_(default|write|lock).sst, key count 2, size 24[0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:16 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 handleheartbeat:{Node 2} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:16 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54 HandlePropose:{Node 1} recieve from Node:0 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54.294590 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 16 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:17 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\007\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 16[0m
+2022/07/10 23:58:54.294620 raft.go:281: [0;37m[info] Node:1 sendappend committed: 16	applied:  16
+#0: {EntryType:EntryConfChange Term:7 Index:17 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 7 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54.294628 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.294655 raft.go:254: [0;37m[info] {Node 1} in {term: 7} send {Node: 3} {Appendmsg: Idx: 0 LogTerm: 0 snapmeta: conf_state:<nodes:1 nodes:2 nodes:3 > index:16 term:7 } with committed: 16[0m
+2022/07/10 23:58:54.294675 raft.go:281: [0;37m[info] Node:1 sendappend committed: 16	applied:  16
+#0: {EntryType:EntryConfChange Term:7 Index:17 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 7 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54 handleheartbeat:{Node 3} recieve from Node:1 {msg:MsgHeartbeat Term: 7; logTerm: 0 Index:0 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:16 Entries:[{7 17 }] Commit:16 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.297391 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.297425 raft.go:927: [0;37m[info] Node:2 committed: 16	applied:  16
+#0: {EntryType:EntryConfChange Term:7 Index:17 Data:[8 1 16 2 26 30 10 14 8 1 18 4 8 1 16 1 34 4 8 7 16 1 26 12 8 1 18 8 8 1 18 4 8 2 16 2] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/10 23:58:54.303415 log.go:311: [0;37m[info] Node:1 lo:17 hi:18 stable:17[0m
+2022/07/10 23:58:54.303499 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 16 LogTerm: 7 ents: [entry_type:EntryConfChange term:7 index:17 data:"\010\001\020\002\032\036\n\016\010\001\022\004\010\001\020\001\"\004\010\007\020\001\032\014\010\001\022\010\010\001\022\004\010\002\020\002" ]} with committed: 16[0m
+2022/07/10 23:58:54.303515 raft.go:281: [0;37m[info] Node:1 sendappend committed: 16	applied:  16
+[0m
+2022/07/10 23:58:54.303525 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.303531 peer_storage.go:182: [0;37m[info] [region 1] 1 requesting snapshot[0m
+2022/07/10 23:58:54 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 7; logTerm: 0 Index:17 Entries:[] Commit:0 Reject:false} in {term : 7} with {state: StateLeader}
+2022/07/10 23:58:54 Node:1 commitTo:17 with apply:16  precommit:16  stable:17 and LastIndex:17
+2022/07/10 23:58:54.303584 raft.go:278: [0;37m[info] {Node 1} in {term: 7} send {Node: 2} {Appendmsg: Idx: 17 LogTerm: 7 ents: []} with committed: 17[0m
+2022/07/10 23:58:54.303591 raft.go:281: [0;37m[info] Node:1 sendappend committed: 17	applied:  16
+[0m
+2022/07/10 23:58:54.303596 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.303605 log.go:311: [0;37m[info] Node:1 lo:17 hi:18 stable:17[0m
+2022/07/10 23:58:54 Node:1 Ready recieve ss:<nil> hs:{7 1 17 {} [] 0} ents:[{7 17 }]
+2022/07/10 23:58:54.303598 raft.go:1063: [0;37m[info] data:"\n\032\010\001\"\004\010\007\020\001*\004\010\001\020\001*\004\010\002\020\002*\004\010\003\020\003\020\310\001*%\n\022\n\007default\020\310\001\030\354\225\335\313\017\n\007\n\005write\n\006\n\004lock" metadata:<conf_state:<nodes:1 nodes:2 nodes:3 > index:16 term:7 > [0m
+2022/07/10 23:58:54.303684 log.go:219: [0;37m[info] index out of range[0m
+2022/07/10 23:58:54.303738 raft.go:1080: [0;37m[info] data:"\n\032\010\001\"\004\010\007\020\001*\004\010\001\020\001*\004\010\002\020\002*\004\010\003\020\003\020\310\001*%\n\022\n\007default\020\310\001\030\354\225\335\313\017\n\007\n\005write\n\006\n\004lock" metadata:<conf_state:<nodes:1 nodes:2 nodes:3 > index:16 term:7 > [0m
+2022/07/10 23:58:54.303789 log.go:462: [0;37m[info] log [&{0xc17e2af2c0 0 0 0 [] <nil> 3}] starts to restore snapshot [index: 16, term: 7][0m
+2022/07/10 23:58:54.303803 raft.go:1035: [0;37m[info] Node:3 [commit: 16] restored snapshot [index: 16, term: 7][0m
+2022/07/10 23:58:54.303827 raft.go:1059: [0;37m[info] commitindex:16 snap:data:"\n\032\010\001\"\004\010\007\020\001*\004\010\001\020\001*\004\010\002\020\002*\004\010\003\020\003\020\310\001*%\n\022\n\007default\020\310\001\030\354\225\335\313\017\n\007\n\005write\n\006\n\004lock" metadata:<conf_state:<nodes:1 nodes:2 nodes:3 > index:16 term:7 > [0m
+2022/07/10 23:58:54.303839 peer_storage.go:346: [0;37m[info] [region 1] 3 begin to apply snapshot[0m
+2022/07/10 23:58:54.303883 region_task.go:93: [0;37m[info] begin apply snap data. [regionId: 1][0m
+2022/07/10 23:58:54.303938 region_task.go:137: [0;37m[info] succeed in deleting data in range. [regionId: 1, startKey: , endKey: ][0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:16 Entries:[{7 17 }] Commit:16 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.306278 raft.go:927: [0;37m[info] Node:2 committed: 16	applied:  16
+[0m
+2022/07/10 23:58:54 HandleAppendEntries:{Node 2} recieve from Node:1 {msg:MsgAppend Term: 7; logTerm: 7 Index:17 Entries:[] Commit:17 Reject:false} in {term : 7} with {state: StateFollower}
+2022/07/10 23:58:54.306297 raft.go:927: [0;37m[info] Node:2 committed: 17	applied:  16
+[0m
+2022/07/10 23:58:54.306304 log.go:311: [0;37m[info] Node:2 lo:17 hi:18 stable:17[0m
+2022/07/10 23:58:54 Node:2 Ready recieve ss:<nil> hs:{7 0 17 {} [] 0} ents:[{7 17 }]
+2022/07/10 23:58:54.310488 peer_msg_handler.go:817: [0;37m[info] [region 1] 2 starts destroy[0m
+2022/07/10 23:58:54.310544 peer.go:204: [0;37m[info] [region 1] 2 begin to destroy[0m
+2022/07/10 23:58:54.310567 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:8 version:1  ignore it[0m
+2022/07/10 23:58:54.310585 peer_msg_handler.go:729: [0;37m[info] [region 1] raft message MsgAppendResponse is stale, current conf_ver:8 version:1  ignore it[0m
+2022/07/10 23:58:54.310567 peer_storage.go:298: [0;37m[info] [region 1] clear peer 1 meta key 1 apply key 1 raft key and 4 raft logs, takes 10.6µs[0m
+2022/07/10 23:58:54.317080 peer.go:232: [0;37m[info] [region 1] 2 destroy itself, takes 6.531ms[0m
+panic: [region 1] 2 meta corruption detected
+
+goroutine 276 [running]:
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).destroyPeer(0xc17c935e10)
+	/home/liuheng/source_code/bullfrog_tinykv/kv/raftstore/peer_msg_handler.go:834 +0x29f
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).HandleConfchange(0xc17c935e10, 0xc17c935b48, 0x0?)
+	/home/liuheng/source_code/bullfrog_tinykv/kv/raftstore/peer_msg_handler.go:395 +0x95a
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).HandleCommittedEntries(0xc17c935e10, {0xc121cfdbd0, 0x1, 0xc17c8dc600?})
+	/home/liuheng/source_code/bullfrog_tinykv/kv/raftstore/peer_msg_handler.go:101 +0x19d
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*peerMsgHandler).HandleRaftReady(0xc17c935e10)
+	/home/liuheng/source_code/bullfrog_tinykv/kv/raftstore/peer_msg_handler.go:82 +0x314
+github.com/pingcap-incubator/tinykv/kv/raftstore.(*raftWorker).run(0xc12b044fa0, 0xc00028d4a0, 0xc00000e990?)
+	/home/liuheng/source_code/bullfrog_tinykv/kv/raftstore/raft_worker.go:61 +0x439
+created by github.com/pingcap-incubator/tinykv/kv/raftstore.(*Raftstore).startWorkers
+	/home/liuheng/source_code/bullfrog_tinykv/kv/raftstore/raftstore.go:277 +0x17b

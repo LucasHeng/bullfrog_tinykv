@@ -549,6 +549,8 @@ func TestBasicConfChange3B(t *testing.T) {
 	cluster.MustRemovePeer(1, NewPeer(4, 4))
 	cluster.MustRemovePeer(1, NewPeer(5, 5))
 
+	log.Infof("lab 3b xxxxx")
+
 	// now region 1 only has peer: (1, 1)
 	cluster.MustPut([]byte("k1"), []byte("v1"))
 	MustGetNone(cluster.engines[2], []byte("k1"))
@@ -562,14 +564,15 @@ func TestBasicConfChange3B(t *testing.T) {
 
 	epoch := cluster.GetRegion([]byte("k1")).GetRegionEpoch()
 	assert.True(t, epoch.GetConfVer() > 1)
-
+	log.Infof("lab 3b ccccc")
 	// peer 5 must not exist
 	MustGetNone(cluster.engines[5], []byte("k1"))
 
 	// add peer (3, 3) to region 1
 	cluster.MustAddPeer(1, NewPeer(3, 3))
-	cluster.MustRemovePeer(1, NewPeer(2, 2))
 
+	cluster.MustRemovePeer(1, NewPeer(2, 2))
+	log.Infof("lab 3b dddd")
 	cluster.MustPut([]byte("k3"), []byte("v3"))
 	cluster.MustGet([]byte("k3"), []byte("v3"))
 	MustGetEqual(cluster.engines[3], []byte("k1"), []byte("v1"))

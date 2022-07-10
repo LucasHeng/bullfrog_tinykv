@@ -395,6 +395,7 @@ func (m *MockSchedulerClient) tryFinished(op *Operator, region *metapb.Region, l
 	case OperatorTypeAddPeer:
 		add := op.Data.(*OpAddPeer)
 		if !add.pending {
+			// 判断是否已经有相应的peer
 			for _, p := range region.GetPeers() {
 				if add.peer.GetId() == p.GetId() {
 					add.pending = true

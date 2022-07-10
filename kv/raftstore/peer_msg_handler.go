@@ -94,7 +94,15 @@ func (d *peerMsgHandler) HandleRaftReady() {
 func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) error {
 	kvWB := &engine_util.WriteBatch{}
 	for _, e := range committedEntries {
-		d.HandleEntry(&e, kvWB)
+		switch e.EntryType {
+		case eraftpb.EntryType_EntryNormal:
+			d.HandleEntry(&e, kvWB)
+		case eraftpb.EntryType_EntryConfChange:
+			d.HandleConfchange(&e, kvWB)
+		default:
+			panic("no exist entrytype")
+		}
+		// d.HandleEntry(&e, kvWB)
 		if d.stopped {
 			return nil
 		}
@@ -125,6 +133,7 @@ func (d *peerMsgHandler) FindProposal(e *eraftpb.Entry) (*proposal, bool) {
 				d.proposals = d.proposals[1:]
 				return nil, false
 			}
+
 			return proposal, true
 		}
 	}
@@ -311,6 +320,111 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 	}
 }
 
+func hasPeer(region *metapb.Region, id uint64) bool {
+	for _, p := range region.GetPeers() {
+		if p.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *peerMsgHandler) HandleConfchange(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
+	var cc eraftpb.ConfChange
+	err := cc.Unmarshal(e.Data)
+	if err != nil {
+		panic(err)
+	}
+	msg := &raft_cmdpb.RaftCmdRequest{}
+	err = msg.Unmarshal(cc.Context)
+	if err != nil {
+		panic(err)
+	}
+
+	// 判断版本，版本不对，那么就扔掉
+	region := d.Region()
+	if err := util.CheckRegionEpoch(msg, region, true); err != nil {
+		if err, ok := err.(*util.ErrEpochNotMatch); ok {
+			// 如果regionepoch不对，那么后续就不执行了
+			if len(d.proposals) > 0 {
+				proposal, ok := d.FindProposal(e)
+				if ok {
+					proposal.cb.Done(ErrResp(err))
+					d.proposals = d.proposals[1:]
+					return
+				}
+			}
+		}
+		return
+	}
+	//
+	switch cc.ChangeType {
+	case eraftpb.ConfChangeType_AddNode:
+		// 没有就加上
+		if !hasPeer(d.Region(), cc.GetNodeId()) {
+			d.Region().RegionEpoch.ConfVer++
+			peer := &metapb.Peer{
+				Id:      cc.GetNodeId(),
+				StoreId: msg.AdminRequest.ChangePeer.Peer.StoreId,
+			}
+			d.Region().Peers = append(d.Region().Peers, peer)
+			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			storeMeta.regions[d.Region().GetId()] = d.Region()
+			storeMeta.Unlock()
+			d.insertPeerCache(peer)
+		}
+	case eraftpb.ConfChangeType_RemoveNode:
+		// 要删除的节点是自己
+		if cc.NodeId == d.PeerId() {
+			// 考虑一种情况就是只剩下两个peer，且删除的是leader，这个时候应该怎么去处理呢
+			d.destroyPeer()
+			break
+		}
+
+		if hasPeer(d.Region(), cc.GetNodeId()) {
+			d.Region().RegionEpoch.ConfVer++
+			for i, p := range d.Region().GetPeers() {
+				if p.Id == cc.GetNodeId() {
+					d.Region().Peers = append(d.Region().Peers[:i], d.Region().Peers[i+1:]...)
+					break
+				}
+			}
+			// region信息改变，持久化
+			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
+			// 跟新globalcontext里的storeMeta
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			storeMeta.regions[d.Region().Id] = d.Region()
+			storeMeta.Unlock()
+			// 修改peer Cache
+			d.removePeerCache(cc.NodeId)
+		}
+	}
+
+	// 幂等的，所以可以多次调用?
+	d.RaftGroup.ApplyConfChange(cc)
+
+	if d.IsLeader() {
+		defer d.HeartbeatScheduler(d.ctx.regionTaskSender)
+	}
+
+	proposal, ok := d.FindProposal(e)
+	resp := &raft_cmdpb.RaftCmdResponse{
+		Header: &raft_cmdpb.RaftResponseHeader{},
+		AdminResponse: &raft_cmdpb.AdminResponse{
+			CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
+			ChangePeer: &raft_cmdpb.ChangePeerResponse{Region: d.Region()},
+		},
+	}
+	if ok {
+		proposal.cb.Done(resp)
+		d.proposals = d.proposals[1:]
+		return
+	}
+}
+
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	switch msg.Type {
 	case message.MsgTypeRaftMessage:
@@ -416,6 +530,26 @@ func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb 
 		}
 		d.RaftGroup.TransferLeader(msg.AdminRequest.TransferLeader.Peer.Id)
 		cb.Done(resp)
+	case raft_cmdpb.AdminCmdType_ChangePeer:
+		// 这个也需要进行raft复制
+		// 保证每时每刻只有一个confchange
+		if d.RaftGroup.Raft.PendingConfIndex > d.peerStorage.AppliedIndex() {
+			return
+		}
+		d.proposals = append(d.proposals, &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		})
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.ProposeConfChange(eraftpb.ConfChange{
+			ChangeType: msg.AdminRequest.ChangePeer.ChangeType,
+			NodeId:     msg.AdminRequest.ChangePeer.Peer.Id,
+			Context:    data,
+		})
 	default:
 		panic("no such admin request")
 	}
