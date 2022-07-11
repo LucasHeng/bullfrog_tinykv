@@ -407,7 +407,7 @@ func (d *peerMsgHandler) HandleConfchange(e *eraftpb.Entry, kvWB *engine_util.Wr
 	d.RaftGroup.ApplyConfChange(cc)
 
 	if d.IsLeader() {
-		defer d.HeartbeatScheduler(d.ctx.regionTaskSender)
+		d.HeartbeatScheduler(d.ctx.regionTaskSender)
 	}
 
 	proposal, ok := d.FindProposal(e)

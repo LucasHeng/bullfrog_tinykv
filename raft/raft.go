@@ -438,6 +438,12 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 		ents[i].Term = r.Term
 		ents[i].Index = lastindex + 1 + uint64(i)
 		// DPrintf("%v %v %v", r.Prs, r.Prs[r.id], ents[i])
+		if ents[i].EntryType == pb.EntryType_EntryConfChange {
+			if r.PendingConfIndex > r.RaftLog.applied {
+				return
+			}
+			r.PendingConfIndex = lastindex + 1 + uint64(i)
+		}
 		r.Prs[r.id].Match = ents[i].Index
 		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
 	}

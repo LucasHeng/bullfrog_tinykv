@@ -557,6 +557,8 @@ func TestBasicConfChange3B(t *testing.T) {
 
 	// add peer (2, 2) to region 1
 	cluster.MustAddPeer(1, NewPeer(2, 2))
+	log.Infof("lab 3b xxxx")
+	// cluster.MustRemovePeer(1, NewPeer(2, 2))
 	cluster.MustPut([]byte("k2"), []byte("v2"))
 	cluster.MustGet([]byte("k2"), []byte("v2"))
 	MustGetEqual(cluster.engines[2], []byte("k1"), []byte("v1"))
