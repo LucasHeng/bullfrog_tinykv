@@ -168,7 +168,7 @@ func (rn *RawNode) Ready() Ready {
 	if !IsEmptySnap(rn.Raft.RaftLog.pendingSnapshot) {
 		rd.Snapshot = *rn.Raft.RaftLog.pendingSnapshot
 		rn.Raft.RaftLog.pendingSnapshot = nil
-		ToCPrint("[Ready] hash snap : %v", rd.Snapshot)
+		//ToCPrint("[Ready] hash snap : %v", rd.Snapshot)
 	}
 	if len(rn.Raft.msgs) != 0 {
 		rd.Messages = rn.Raft.msgs
@@ -199,7 +199,7 @@ func (rn *RawNode) HasReady() bool {
 	}
 	// 有快照需要应用
 	if !IsEmptySnap(rn.Raft.RaftLog.pendingSnapshot) {
-		ToCPrint("[HasReady] has snap")
+		//ToCPrint("[HasReady] has snap")
 		return true
 	}
 	return false

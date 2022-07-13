@@ -5,7 +5,6 @@ import (
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/meta"
 	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
-	"github.com/pingcap-incubator/tinykv/raft"
 	"reflect"
 	"time"
 
@@ -166,6 +165,11 @@ func (d *peerMsgHandler) handleConfChange(c *eraftpb.ConfChange, ent eraftpb.Ent
 				}
 				// 等待 transfer success
 				time.Sleep(50 * time.Millisecond)
+				// 如果还是 leader， 说明可能分区了，就直接return
+				if d.IsLeader() {
+					log.Info("corner case")
+					return wb
+				}
 			}
 			d.destroyPeer()
 			return wb
@@ -235,7 +239,7 @@ func (d *peerMsgHandler) handleAdminRequests(msg *raft_cmdpb.RaftCmdRequest, ent
 	case raft_cmdpb.AdminCmdType_Split:
 		split := req.Split
 		p := d.findProposal(&ent)
-		raft.SplitPrint("[handle admin split] %v", split)
+		//raft.SplitPrint("[handle admin split] %v", split)
 		// 使用 engine_util.ExceedEndKey() 与 region 的 end key 进行比较
 		//exceed := engine_util.ExceedEndKey(split.SplitKey, d.Region().EndKey)
 		//if exceed {
@@ -354,10 +358,10 @@ func (d *peerMsgHandler) handleRequests(msg *raft_cmdpb.RaftCmdRequest, ent *era
 				return wb
 			}
 		}
-		raft.ToBPrint("[handle ready] %v handle , type : %v", d.PeerId(), req.CmdType)
+		//raft.ToBPrint("[handle ready] %v handle , type : %v", d.PeerId(), req.CmdType)
 		switch req.CmdType {
 		case raft_cmdpb.CmdType_Put:
-			raft.ToBPrint("[handle ready] %v handle put type , key : %v, value : %v", d.PeerId(), string(req.Put.Key), string(req.Put.Value))
+			//raft.ToBPrint("[handle ready] %v handle put type , key : %v, value : %v", d.PeerId(), string(req.Put.Key), string(req.Put.Value))
 			wb.SetCF(req.Put.Cf, req.Put.Key, req.Put.Value)
 		case raft_cmdpb.CmdType_Delete:
 			wb.DeleteCF(req.Delete.Cf, req.Delete.Key)
@@ -412,7 +416,7 @@ func (d *peerMsgHandler) handleRequests(msg *raft_cmdpb.RaftCmdRequest, ent *era
 					propose.cb.Done(ErrResp(&util.ErrEpochNotMatch{}))
 					return wb
 				}
-				raft.SplitPrint("[snap] -------")
+				//raft.SplitPrint("[snap] -------")
 				d.peerStorage.applyState.AppliedIndex = ent.Index
 				wb.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
 				wb.WriteToDB(d.peerStorage.Engines.Kv)
@@ -618,7 +622,7 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			})
 		case raft_cmdpb.AdminCmdType_Split:
 			split := msg.AdminRequest.Split
-			raft.SplitPrint("[propose split] %v", split)
+			//raft.SplitPrint("[propose split] %v", split)
 			err := util.CheckKeyInRegion(split.SplitKey, d.Region())
 			if err != nil {
 				cb.Done(ErrResp(err))

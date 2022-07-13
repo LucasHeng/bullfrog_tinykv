@@ -24,7 +24,7 @@ func (server *Server) RawGet(_ context.Context, req *kvrpcpb.RawGetRequest) (*kv
 			NotFound: true,
 		}, nil
 	}
-
+	reader.Close()
 	return &kvrpcpb.RawGetResponse{
 		Value: val,
 	}, nil

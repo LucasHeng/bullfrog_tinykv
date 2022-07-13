@@ -222,9 +222,9 @@ func (l *RaftLog) findentries(lo uint64, hi uint64) []pb.Entry {
 		firstindex := l.entries[0].Index
 		ents = append(ents, l.entries[max(l.stabled+1, lo)-firstindex:hi-firstindex]...)
 	}
-	if flag == "copy" || flag == "all" {
-		// DPrintf("log.go line 101 ents:%d", len(ents))
-	}
+	//if flag == "copy" || flag == "all" {
+	//	// DPrintf("log.go line 101 ents:%d", len(ents))
+	//}
 	return ents
 }
 
@@ -254,7 +254,7 @@ func (l *RaftLog) commitTo(commit uint64) {
 			return
 		}
 		l.committed = commit
-		ToCPrint("[commitTo] commit to %v", commit)
+		//ToCPrint("[commitTo] commit to %v", commit)
 	}
 }
 
@@ -263,9 +263,9 @@ func (l *RaftLog) hasEntriesSince(index uint64) bool {
 	firstIndex, _ := l.storage.FirstIndex()
 	offset := max(index+1, firstIndex)
 	high := l.committed + 1
-	if flag == "copy" || flag == "all" {
-		DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
-	}
+	//if flag == "copy" || flag == "all" {
+	//	DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
+	//}
 	return high > offset
 }
 
@@ -275,9 +275,9 @@ func (l *RaftLog) entriesSince(index uint64) []pb.Entry {
 	offset := max(index+1, firstindex)
 	high := l.committed + 1
 	if high > offset {
-		if flag == "copy" || flag == "all" {
-			DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
-		}
+		//if flag == "copy" || flag == "all" {
+		//	DPrintf("Node find entries_since from lo: %d to hi: %d", offset, high)
+		//}
 		return l.findentries(offset, high)
 	}
 	return []pb.Entry{}

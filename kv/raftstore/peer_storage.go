@@ -180,7 +180,7 @@ func (ps *PeerStorage) Snapshot() (eraftpb.Snapshot, error) {
 	}
 
 	log.Infof("%s requesting snapshot", ps.Tag)
-	raft.ToCPrint("[Snapshot] %s requesting snapshot, state: %v", ps.Tag, ps.snapState.StateType)
+	//raft.ToCPrint("[Snapshot] %s requesting snapshot, state: %v", ps.Tag, ps.snapState.StateType)
 	ps.snapTriedCnt++
 	ch := make(chan *eraftpb.Snapshot, 1)
 	ps.snapState = snap.SnapState{
@@ -387,7 +387,7 @@ func (ps *PeerStorage) ApplySnapshot(snapshot *eraftpb.Snapshot, kvWB *engine_ut
 	// 通过 ps.regionSched 向 region worker 发送 RegionTaskApply 任务
 	notifier := make(chan bool, 1)
 	// apply snapshot,交给 worker 去处理
-	fmt.Println(raft.IsEmptySnap(snapshot))
+	//fmt.Println(raft.IsEmptySnap(snapshot))
 	ps.regionSched <- &runner.RegionTaskApply{
 		RegionId: snapData.Region.Id,
 		Notifier: notifier,
