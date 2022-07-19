@@ -17,6 +17,8 @@ package raft
 import (
 	"errors"
 	"math/rand"
+	"sync"
+	"time"
 
 	"github.com/pingcap-incubator/tinykv/log"
 	pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
@@ -48,6 +50,23 @@ func (st StateType) String() string {
 // ErrProposalDropped is returned when the proposal is ignored by some cases,
 // so that the proposer can be notified and fail fast.
 var ErrProposalDropped = errors.New("raft proposal dropped")
+
+type lockedRand struct {
+	mu   sync.Mutex
+	rand *rand.Rand
+}
+
+func (r *lockedRand) Intn(n int) int {
+	r.mu.Lock()
+	// 防止所有重复的太多
+	v := r.rand.Intn(n)
+	r.mu.Unlock()
+	return v
+}
+
+var globalRand = &lockedRand{
+	rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+}
 
 // Config contains the parameters to start a raft.
 type Config struct {
@@ -164,6 +183,11 @@ type Raft struct {
 	PendingConfIndex uint64
 }
 
+// 看transfer是否结束
+func (r *Raft) Istransfer() bool {
+	return r.leadTransferee != None
+}
+
 // newRaft return a raft peer with the given config
 func newRaft(c *Config) *Raft {
 	// Your Code Here (2A).
@@ -196,6 +220,9 @@ func newRaft(c *Config) *Raft {
 	// 用于raftlog日志
 	r.RaftLog.id = c.ID
 
+	// // 新的节点至少要有自己的prs
+	// r.Prs[r.id] = &Progress{}
+
 	// 恢复初始状态？
 	if hs, cs, err := c.Storage.InitialState(); err == nil {
 		if len(cs.Nodes) != 0 {
@@ -217,7 +244,13 @@ func newRaft(c *Config) *Raft {
 	}
 	// 一些新term的东西需要设置，比如随机时间
 	r.becomeFollower(r.Term, None)
+	// 输出时钟节拍
+	r.PrintTime()
 	return r
+}
+
+func (r *Raft) PrintTime() {
+	DPrintf("Node:%d with RandElecttimeout:%d electtimeout:%d electelapsed:%d heartbeattimeout:%d heartbeatelapsed:%d", r.id, r.randElectionTimeout, r.electionTimeout, r.electionElapsed, r.heartbeatTimeout, r.heartbeatElapsed)
 }
 
 // sendAppend sends an append RPC with new entries (if any) and the
@@ -251,6 +284,7 @@ func (r *Raft) sendAppend(to uint64) bool {
 
 		msg.Snapshot = &snap
 		r.msgs = append(r.msgs, msg)
+		// r.Prs[to].Next = snap.Metadata.Index + 1
 		log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d snapmeta: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Snapshot.Metadata, r.RaftLog.committed)
 	} else {
 		msg := pb.Message{
@@ -262,9 +296,9 @@ func (r *Raft) sendAppend(to uint64) bool {
 		msg.Index = process.Next - 1
 		msg.LogTerm = term
 		// 拿到的entry，转换成*entry
-		if flag == "copy" || flag == "all" {
-			// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
-		}
+		//if flag == "copy" || flag == "all" {
+		//	// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
+		//}
 
 		// if len(ents) == 0 {
 		// 	return true
@@ -303,6 +337,9 @@ func (r *Raft) sendHeartbeat(to uint64) {
 // tick advances the internal logical clock by a single tick.
 func (r *Raft) tick() {
 	// Your Code Here (2A).
+	if r.id > 5 {
+		r.PrintTime()
+	}
 	switch r.State {
 	case StateFollower, StateCandidate:
 		r.tickElection()
@@ -315,8 +352,10 @@ func (r *Raft) tickElection() {
 	r.electionElapsed++
 	if r.electionElapsed >= r.randElectionTimeout {
 		// 超过时间了,开始新的选举
+		DPrintf("Node:%d begin hup", r.id)
 		r.electionElapsed = 0
 		m := pb.Message{To: None, MsgType: pb.MessageType_MsgHup, From: r.id}
+		r.PrintTime()
 		r.Step(m)
 	}
 }
@@ -378,6 +417,7 @@ func (r *Raft) reset(term uint64) {
 }
 
 func (r *Raft) resetrandElectionTimeout() {
+	// r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
 	r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
 }
 
@@ -444,8 +484,17 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 			}
 			r.PendingConfIndex = lastindex + 1 + uint64(i)
 		}
-		r.Prs[r.id].Match = ents[i].Index
-		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		if _, ok := r.Prs[r.id]; ok {
+			r.Prs[r.id].Match = ents[i].Index
+			r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		} else {
+			r.Prs[r.id] = &Progress{
+				Match: ents[i].Index,
+				Next:  ents[i].Index + 1,
+			}
+		}
+		// r.Prs[r.id].Match = ents[i].Index
+		// r.Prs[r.id].Next = r.Prs[r.id].Match + 1
 	}
 	r.RaftLog.AppendEntries(ents...)
 	N := r.RaftLog.LastIndex()
@@ -475,7 +524,7 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 // on `eraftpb.proto` for what msgs should be handled
 func (r *Raft) Step(m pb.Message) error {
 	// Your Code Here (2A).
-	// log.Infof("step msg:%v,raftstate:%v", m, r.State.String())
+	log.Infof("Node:%d step msg:%v,SS:%v HS:%v", r.id, m, r.softState(), r.hardState())
 	switch r.State {
 	case StateFollower:
 		r.stepFollower(m)
@@ -603,11 +652,12 @@ func (r *Raft) stepCandidate(m pb.Message) {
 
 	case pb.MessageType_MsgTimeoutNow:
 		// 开始新的选举
-		if _, ok := r.Prs[r.id]; !ok {
-			// 自己不存在了
-			return
-		}
-		r.hup()
+		// if _, ok := r.Prs[r.id]; !ok {
+		// 	// 自己不存在了
+		// 	return
+		// }
+		// r.hup()
+		log.Debugf("%x [term %d state %v] ignored MsgTimeoutNow from %x", r.id, r.Term, r.State, m.From)
 	}
 }
 
@@ -682,7 +732,12 @@ func (r *Raft) stepLeader(m pb.Message) {
 		// 当前leader在转换？
 		// 先给自己添加entries
 		// 再给所有的peer发送
-
+		if r.Prs[r.id] == nil {
+			// If we are not currently a member of the range (i.e. this node
+			// was removed from the configuration while serving as leader),
+			// drop any new proposals.
+			return
+		}
 		r.printMessage(m, "HandlePropose")
 		if r.leadTransferee != None {
 			r.printMessage(m, "leadtransfering")
@@ -716,6 +771,7 @@ func (r *Raft) stepLeader(m pb.Message) {
 		pr, ok := r.Prs[m.From]
 		if !ok {
 			// 不存在扔掉
+			DPrintf("not exist?")
 			return
 		}
 		leadTransferee := m.From
@@ -735,8 +791,10 @@ func (r *Raft) stepLeader(m pb.Message) {
 		r.electionElapsed = 0
 		r.leadTransferee = leadTransferee
 		if pr.Match == r.RaftLog.LastIndex() {
+			DPrintf("send time out:%d", leadTransferee)
 			r.sendTimeoutNow(leadTransferee)
 		} else {
+			DPrintf("sendappend:%d prs:%v", leadTransferee, pr)
 			r.sendAppend(leadTransferee)
 		}
 	}
@@ -843,7 +901,8 @@ func (r *Raft) updateCommit() {
 type Printmsg struct {
 	Term  uint64
 	Index uint64
-	Msg   *raft_cmdpb.RaftCmdRequest
+	Msg   raft_cmdpb.RaftCmdRequest
+	Text  string
 }
 
 func (r *Raft) printMessage(m pb.Message, head string) {
@@ -852,7 +911,7 @@ func (r *Raft) printMessage(m pb.Message, head string) {
 		for _, e := range m.Entries {
 			cmd := &raft_cmdpb.RaftCmdRequest{}
 			cmd.Unmarshal(e.Data)
-			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: cmd})
+			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: *cmd})
 		}
 	}
 	To2B("%s:{Node %d} recieve from Node:%d {msg:%v Term: %d; logTerm: %d Index:%d Entries:%v Commit:%d Reject:%v} in {term : %d} with {state: %v}", head, r.id, m.From, m.MsgType, m.Term, m.LogTerm, m.Index, msgs, m.Commit, m.Reject, r.Term, r.State.String())
@@ -1111,7 +1170,8 @@ func (r *Raft) removeNode(id uint64) {
 	// Your Code Here (3A).
 	if _, ok := r.Prs[id]; ok {
 		delete(r.Prs, id)
-		if r.State == StateLeader {
+		// 如果删除的是自己，那么不应该检测提交
+		if r.State == StateLeader && r.id != id {
 			r.updateCommit()
 		}
 	}
@@ -1133,7 +1193,7 @@ func (r *Raft) loadState(hs pb.HardState) bool {
 func (r *Raft) countVote() (int, int) {
 	granted, reject := 0, 0
 	for _, v := range r.votes {
-		if v == true {
+		if v {
 			granted++
 		} else {
 			reject++

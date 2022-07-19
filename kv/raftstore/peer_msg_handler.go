@@ -1,6 +1,7 @@
 package raftstore
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/pingcap-incubator/tinykv/proto/pkg/metapb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 	rspb "github.com/pingcap-incubator/tinykv/proto/pkg/raft_serverpb"
+	"github.com/pingcap-incubator/tinykv/raft"
 	"github.com/pingcap-incubator/tinykv/scheduler/pkg/btree"
 	"github.com/pingcap/errors"
 )
@@ -56,20 +58,26 @@ func (d *peerMsgHandler) HandleRaftReady() {
 
 	if err != nil {
 		// error处理
+		log.Debugf("exist err:%v", err)
 		return
 	}
 
 	if result != nil && result.Region != nil {
 		d.peerStorage.SetRegion(result.Region)
 		d.ctx.storeMeta.Lock()
+		// log.Infof("prevregion:%v region:%v", result.PrevRegion, result.Region)
+		// d.ctx.storeMeta.regionRanges.Delete(&regionItem{result.PrevRegion})
 		d.ctx.storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: result.Region})
-		d.ctx.storeMeta.regionRanges.Delete(&regionItem{result.PrevRegion})
 		d.ctx.storeMeta.regions[d.regionId] = d.Region()
 		d.ctx.storeMeta.Unlock()
 	}
 
 	if rd.SoftState != nil {
 		// ss应该怎么弄？
+		// 如果目前软状态为leader，那么应该和scheduler通气
+		if rd.SoftState.RaftState == raft.StateLeader {
+			d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
+		}
 	}
 
 	// 处理messages
@@ -81,6 +89,7 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	if len(rd.CommittedEntries) != 0 {
 		err := d.HandleCommittedEntries(rd.CommittedEntries)
 		if err != nil {
+			log.Errorf("%v", err)
 			panic(err)
 		}
 	}
@@ -89,6 +98,10 @@ func (d *peerMsgHandler) HandleRaftReady() {
 
 	d.RaftGroup.Advance(rd)
 	// Your Code Here (2B).
+}
+
+func PanicTest() {
+
 }
 
 func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) error {
@@ -140,6 +153,20 @@ func (d *peerMsgHandler) FindProposal(e *eraftpb.Entry) (*proposal, bool) {
 	return nil, false
 }
 
+func (d *peerMsgHandler) getKeyFromReq(req *raft_cmdpb.Request) []byte {
+	var key []byte
+	switch req.CmdType {
+	case raft_cmdpb.CmdType_Get:
+		key = req.Get.Key
+	case raft_cmdpb.CmdType_Put:
+		key = req.Put.Key
+	case raft_cmdpb.CmdType_Delete:
+		key = req.Delete.Key
+	default:
+	}
+	return key
+}
+
 func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
 	// 解码出raftcmd
 	msg := &raft_cmdpb.RaftCmdRequest{}
@@ -151,6 +178,14 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		resp := &raft_cmdpb.RaftCmdResponse{Header: &raft_cmdpb.RaftResponseHeader{}}
 		proposal, ok := d.FindProposal(e)
 		for _, req := range msg.Requests {
+			// 检查这个key是否在当前region，没有就返回错误
+			err := util.CheckKeyInRegion(d.getKeyFromReq(req), d.Region())
+			if err != nil {
+				if ok {
+					proposal.cb.Done(ErrResp(err))
+				}
+				return
+			}
 			switch req.CmdType {
 			case raft_cmdpb.CmdType_Invalid:
 			case raft_cmdpb.CmdType_Get:
@@ -314,6 +349,107 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 				kvWB.SetMeta(meta.ApplyStateKey(d.Region().Id), d.peerStorage.applyState)
 				d.ScheduleCompactLog(log.GetCompactIndex())
 			}
+		case raft_cmdpb.AdminCmdType_Split:
+			// 判断版本，版本不对，那么就扔掉
+			proposal, exist := d.FindProposal(e)
+
+			region := d.Region()
+			if err := util.CheckRegionEpoch(msg, region, true); err != nil {
+				if err, ok := err.(*util.ErrEpochNotMatch); ok {
+					// 如果regionepoch不对，那么后续就不执行了
+					if exist {
+						proposal.cb.Done(ErrResp(err))
+						d.proposals = d.proposals[1:]
+					}
+					return
+				}
+			}
+
+			// 避免传错region
+			if d.regionId != msg.Header.RegionId {
+				err := &util.ErrRegionNotFound{RegionId: msg.Header.RegionId}
+				if exist {
+					proposal.cb.Done(ErrResp(err))
+					d.proposals = d.proposals[1:]
+				}
+				return
+			}
+
+			// 检查key是否在region
+			if err := util.CheckKeyInRegion(areq.Split.SplitKey, d.Region()); err != nil {
+				if exist {
+					proposal.cb.Done(ErrResp(err))
+					d.proposals = d.proposals[1:]
+				}
+				return
+			}
+
+			// 切分后的regions的peers
+			newpeers := make([]*metapb.Peer, 0)
+			for i, peer := range region.Peers {
+				newpeers = append(newpeers, &metapb.Peer{
+					Id:      areq.Split.NewPeerIds[i],
+					StoreId: peer.StoreId,
+				})
+			}
+
+			// 创建新的region
+			// 新的region是在原region的基础上往后切
+			newregion := &metapb.Region{
+				Id:       areq.Split.NewRegionId,
+				StartKey: areq.Split.SplitKey,
+				EndKey:   region.EndKey,
+				Peers:    newpeers,
+				RegionEpoch: &metapb.RegionEpoch{
+					ConfVer: 1,
+					Version: 1,
+				},
+			}
+
+			// 修改storemeta
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			// 修改原来region的信息
+			d.Region().EndKey = areq.Split.SplitKey
+			d.Region().RegionEpoch.Version++
+
+			// 修改上下文中的全局本region和新region
+			// 因为是全局上下文，所以leader修改，所有的region信息都会同步
+			storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: d.Region()})
+			storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: newregion})
+
+			//修改regions
+			storeMeta.regions[newregion.Id] = newregion
+			storeMeta.Unlock()
+
+			// region信息持久化
+			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
+			meta.WriteRegionState(kvWB, newregion, rspb.PeerState_Normal)
+
+			// 创建peer
+			peer, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newregion)
+			if err != nil {
+				panic(err)
+			}
+
+			// 注册新的peer
+			d.ctx.router.register(peer)
+			// 启动peer
+			d.ctx.router.send(newregion.Id, message.NewMsg(message.MsgTypeStart, nil))
+			// 回调返回，分裂成功
+			if exist {
+				resp := &raft_cmdpb.RaftCmdResponse{
+					Header: &raft_cmdpb.RaftResponseHeader{},
+					AdminResponse: &raft_cmdpb.AdminResponse{
+						CmdType: raft_cmdpb.AdminCmdType_Split,
+						Split: &raft_cmdpb.SplitResponse{
+							Regions: []*metapb.Region{region, newregion},
+						},
+					},
+				}
+				proposal.cb.Done(resp)
+				d.proposals = d.proposals[1:]
+			}
 		default:
 			panic("unexist admincmd")
 		}
@@ -378,9 +514,29 @@ func (d *peerMsgHandler) HandleConfchange(e *eraftpb.Entry, kvWB *engine_util.Wr
 	case eraftpb.ConfChangeType_RemoveNode:
 		// 要删除的节点是自己
 		if cc.NodeId == d.PeerId() {
-			// 考虑一种情况就是只剩下两个peer，且删除的是leader，这个时候应该怎么去处理呢
+			// if len(region.Peers) == 2 && d.IsLeader() {
+			// 	// var to uint64
+			// 	// for _, p := range region.Peers {
+			// 	// 	if p.Id != cc.NodeId {
+			// 	// 		to = p.Id
+			// 	// 	}
+			// 	// }
+			// 	// if to != 0 {
+			// 	// 	log.Infof("Node:%d transferleader to %d", d.PeerId(), to)
+			// 	// 	d.RaftGroup.TransferLeader(to)
+			// 	// }
+			// 	// // 等待 transfer success
+			// 	// return
+			// 	proposal, ok := d.FindProposal(e)
+			// 	if !ok {
+			// 		return
+			// 	}
+			// 	err := fmt.Sprintf("%s return corner case\n", d.Tag)
+			// 	proposal.cb.Done(ErrResp(errors.New(err)))
+			// 	return
+			// }
 			d.destroyPeer()
-			break
+			return
 		}
 
 		if hasPeer(d.Region(), cc.GetNodeId()) {
@@ -406,8 +562,9 @@ func (d *peerMsgHandler) HandleConfchange(e *eraftpb.Entry, kvWB *engine_util.Wr
 	// 幂等的，所以可以多次调用?
 	d.RaftGroup.ApplyConfChange(cc)
 
+	// 更新scheduler中的信息
 	if d.IsLeader() {
-		d.HeartbeatScheduler(d.ctx.regionTaskSender)
+		d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
 	}
 
 	proposal, ok := d.FindProposal(e)
@@ -463,6 +620,7 @@ func (d *peerMsgHandler) preProposeRaftCommand(req *raft_cmdpb.RaftCmdRequest) e
 	leaderID := d.LeaderId()
 	if !d.IsLeader() {
 		leader := d.getPeerFromCache(leaderID)
+		log.Infof("Node:%v state:%v leaderid:%v leader:%v peercache:%v  peers:%v prs:%v", d.Tag, d.peer.RaftGroup.Raft.State.String(), leaderID, leader, d.peerCache, d.peerStorage.Region().Peers, d.peer.RaftGroup.Raft.Prs)
 		return &util.ErrNotLeader{RegionId: regionID, Leader: leader}
 	}
 	// peer_id must be the same as peer's.
@@ -536,6 +694,9 @@ func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb 
 		if d.RaftGroup.Raft.PendingConfIndex > d.peerStorage.AppliedIndex() {
 			return
 		}
+		if (msg.AdminRequest.ChangePeer.ChangeType == eraftpb.ConfChangeType_RemoveNode) && d.IsLeader() && len(d.peerCache) == 2 && msg.AdminRequest.ChangePeer.Peer.Id == d.PeerId() {
+			return
+		}
 		d.proposals = append(d.proposals, &proposal{
 			index: d.nextProposalIndex(),
 			term:  d.Term(),
@@ -550,6 +711,18 @@ func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb 
 			NodeId:     msg.AdminRequest.ChangePeer.Peer.Id,
 			Context:    data,
 		})
+	case raft_cmdpb.AdminCmdType_Split:
+		if err := util.CheckKeyInRegion(msg.AdminRequest.Split.SplitKey, d.Region()); err != nil {
+			cb.Done(ErrResp(err))
+			return
+		}
+		d.proposals = append(d.proposals, &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		})
+		data, _ := msg.Marshal()
+		d.RaftGroup.Propose(data)
 	default:
 		panic("no such admin request")
 	}
@@ -573,6 +746,18 @@ func (d *peerMsgHandler) onTick() {
 		d.onSplitRegionCheckTick()
 	}
 	d.ctx.tickDriverSender <- d.regionId
+}
+
+func (d *peerMsgHandler) syncRegion() {
+	newregion, _, err := d.ctx.schedulerClient.GetRegionByID(context.TODO(), d.Region().Id)
+	region := d.Region()
+	if err != nil {
+		return
+	}
+	// 这里只进行
+	if util.RegionEqual(newregion, region) {
+		return
+	}
 }
 
 func (d *peerMsgHandler) startTicker() {
@@ -819,14 +1004,17 @@ func (d *peerMsgHandler) destroyPeer() {
 		// data too.
 		panic(fmt.Sprintf("%s destroy peer %v", d.Tag, err))
 	}
+	// store里面删除regionid的peer，store不会再发送给peer消息
 	d.ctx.router.close(regionID)
 	d.stopped = true
+	// store维护的关于region的B tree，进行修改
 	if isInitialized && meta.regionRanges.Delete(&regionItem{region: d.Region()}) == nil {
 		panic(d.Tag + " meta corruption detected")
 	}
 	if _, ok := meta.regions[regionID]; !ok {
 		panic(d.Tag + " meta corruption detected")
 	}
+	// store的regions的map的region删除
 	delete(meta.regions, regionID)
 }
 
@@ -884,9 +1072,11 @@ func (d *peerMsgHandler) onSplitRegionCheckTick() {
 		return
 	}
 
+	// leader才检查是否需要split
 	if !d.IsLeader() {
 		return
 	}
+
 	if d.ApproximateSize != nil && d.SizeDiffHint < d.ctx.cfg.RegionSplitSize/8 {
 		return
 	}

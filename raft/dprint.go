@@ -45,7 +45,7 @@ func PrintReady(rd Ready, id uint64) {
 		for _, e := range rd.CommittedEntries {
 			cmd := &raft_cmdpb.RaftCmdRequest{}
 			cmd.Unmarshal(e.Data)
-			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: cmd})
+			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: *cmd, Text: cmd.String()})
 		}
 		if pready {
 			DPrintf("Node:%d Ready recieve ss:%v hs:%v ents:%v", id, rd.SoftState, rd.HardState, msgs)

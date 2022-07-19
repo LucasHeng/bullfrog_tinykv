@@ -169,6 +169,8 @@ func (rn *RawNode) Ready() Ready {
 	if !compareSS(ss, rn.prevSS) {
 		rd.SoftState = &ss
 	}
+	// rd.SoftState = &ss
+
 	// hs是否有更新,hs也不能为空
 	hs := rn.Raft.hardState()
 	if !isEmtpyHardState(hs) && !compareHs(hs, rn.prevHs) {

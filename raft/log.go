@@ -110,10 +110,7 @@ func (l *RaftLog) unstableEntries() []pb.Entry {
 // 是否有unstable entries
 func (l *RaftLog) hasUnstableEntries() bool {
 	l.maybeCompact()
-	if len(l.entries) == 0 {
-		return false
-	}
-	return true
+	return len(l.entries) != 0
 }
 
 // nextEnts returns all the committed but not applied entries
@@ -336,9 +333,9 @@ func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
 		}
 		// ents = append(ents, l.entries[max(l.stabled+1, lo)-firstindex:hi-firstindex]...)
 	}
-	if flag == "copy" || flag == "all" {
-		// DPrintf("log.go line 101 ents:%d", len(ents))
-	}
+	// if flag == "copy" || flag == "all" {
+	// DPrintf("log.go line 101 ents:%d", len(ents))
+	// }
 	return ents, nil
 }
 
