@@ -153,24 +153,24 @@ func (d *peerMsgHandler) handleConfChange(c *eraftpb.ConfChange, ent eraftpb.Ent
 		// 如果要删除的是自己，就直接销毁就行了
 		if d.Meta.Id == c.NodeId {
 			// 考虑一种情况就是只剩下两个peer，且删除的是leader，这个时候应该怎么去处理呢
-			if len(region.Peers) == 2 && d.IsLeader() {
-				var to uint64
-				for _, p := range region.Peers {
-					if p.Id != c.NodeId {
-						to = p.Id
-					}
-				}
-				if to != 0 {
-					d.RaftGroup.TransferLeader(to)
-				}
-				// 等待 transfer success
-				time.Sleep(50 * time.Millisecond)
-				// 如果还是 leader， 说明可能分区了，就直接return
-				if d.IsLeader() {
-					log.Info("corner case")
-					return wb
-				}
-			}
+			//if len(region.Peers) == 2 && d.IsLeader() {
+			//	var to uint64
+			//	for _, p := range region.Peers {
+			//		if p.Id != c.NodeId {
+			//			to = p.Id
+			//		}
+			//	}
+			//	if to != 0 {
+			//		d.RaftGroup.TransferLeader(to)
+			//	}
+			//	// 等待 transfer success
+			//	time.Sleep(50 * time.Millisecond)
+			//	// 如果还是 leader， 说明可能分区了，就直接return
+			//	if d.IsLeader() {
+			//		log.Info("corner case")
+			//		return wb
+			//	}
+			//}
 			d.destroyPeer()
 			return wb
 		}
@@ -603,6 +603,11 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 			})
 		case raft_cmdpb.AdminCmdType_ChangePeer:
 			if d.RaftGroup.Raft.PendingConfIndex > d.peerStorage.AppliedIndex() {
+				return
+			}
+			if len(d.Region().Peers) == 2 && d.IsLeader() && msg.AdminRequest.ChangePeer.ChangeType == eraftpb.ConfChangeType_RemoveNode && msg.AdminRequest.ChangePeer.Peer.Id == d.LeaderId() {
+				fmt.Println("corner case")
+				cb.Done(ErrResp(errors.New("corner case")))
 				return
 			}
 			proposal := &proposal{
