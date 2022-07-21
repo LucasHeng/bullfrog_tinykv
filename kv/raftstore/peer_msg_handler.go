@@ -438,7 +438,7 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			kvWB.Reset()
 
 			d.SizeDiffHint = 0
-			d.ApproximateSize = new(uint64)
+			d.ApproximateSize = nil
 
 			// 注册新的peer
 			d.ctx.router.register(peer)
@@ -1144,6 +1144,11 @@ func (d *peerMsgHandler) validateSplitRegion(epoch *metapb.RegionEpoch, splitKey
 }
 
 func (d *peerMsgHandler) onApproximateRegionSize(size uint64) {
+	if d.ApproximateSize == nil {
+		d.SizeDiffHint = size
+	} else {
+		d.SizeDiffHint += (size - *d.ApproximateSize)
+	}
 	d.ApproximateSize = &size
 }
 
