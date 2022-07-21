@@ -215,7 +215,7 @@ func GenericTest(t *testing.T, part string, nclients int, unreliable bool, crash
 				} else {
 					start := strconv.Itoa(cli) + " " + fmt.Sprintf("%08d", 0)
 					end := strconv.Itoa(cli) + " " + fmt.Sprintf("%08d", j)
-					// log.Infof("%d: client new scan %v-%v\n", cli, start, end)
+					log.Infof("%d: client new scan %v-%v\n", cli, start, end)
 					values := cluster.Scan([]byte(start), []byte(end))
 					v := string(bytes.Join(values, []byte("")))
 					if v != last {
@@ -666,7 +666,7 @@ func TestOneSplit3B(t *testing.T) {
 
 	left := cluster.GetRegion([]byte("k1"))
 	right := cluster.GetRegion([]byte("k2"))
-
+	log.Infof("left:%v and %v right:%v and %v", string(left.StartKey), string(left.EndKey), string(right.StartKey), string(right.EndKey))
 	assert.NotEqual(t, left.GetId(), right.GetId())
 	assert.True(t, bytes.Equal(region.GetStartKey(), left.GetStartKey()))
 	assert.True(t, bytes.Equal(left.GetEndKey(), right.GetStartKey()))
@@ -676,7 +676,8 @@ func TestOneSplit3B(t *testing.T) {
 	resp, _ := cluster.CallCommandOnLeader(&req, time.Second)
 	assert.NotNil(t, resp.GetHeader().GetError())
 	assert.NotNil(t, resp.GetHeader().GetError().GetKeyNotInRegion())
-
+	log.Infof("change:%v", string([]byte("k1")))
+	_ = cluster.Scan([]byte("k1"), []byte("k2"))
 	MustGetEqual(cluster.engines[5], []byte("k100"), []byte("v100"))
 }
 

@@ -284,7 +284,7 @@ func (r *Raft) sendAppend(to uint64) bool {
 
 		msg.Snapshot = &snap
 		r.msgs = append(r.msgs, msg)
-		// r.Prs[to].Next = snap.Metadata.Index + 1
+		r.Prs[to].Next = snap.Metadata.Index + 1
 		log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d snapmeta: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Snapshot.Metadata, r.RaftLog.committed)
 	} else {
 		msg := pb.Message{
@@ -946,21 +946,21 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	// 新leader的Index小于老leader的index，是因为分区原因
 	// 如果发送的message的消息早于commit，则这个消息应该拒绝，因为commit的entry不应该修改
 	// 回复的Index应该是已经匹配的Index
-	if m.Index < r.RaftLog.committed {
-		msg := pb.Message{
-			MsgType: pb.MessageType_MsgAppendResponse,
-			To:      m.From,
-			From:    r.id,
-			Term:    r.Term,
-		}
-		msg.Index = r.RaftLog.committed
-		msg.LogTerm = None
-		r.msgs = append(r.msgs, msg)
-		if flag == "copy" || flag == "all" {
-			DPrintf("{Node %d} send {AppendResp: Term: %d,LogTerm: %d,Index: %d Reject: %v} to {peer: %d} in {term : %d} with {state: %v}", r.id, msg.Term, msg.LogTerm, msg.Index, msg.Reject, m.From, m.Term, r.State.String())
-		}
-		return
-	}
+	// if m.Index < r.RaftLog.committed {
+	// 	msg := pb.Message{
+	// 		MsgType: pb.MessageType_MsgAppendResponse,
+	// 		To:      m.From,
+	// 		From:    r.id,
+	// 		Term:    r.Term,
+	// 	}
+	// 	msg.Index = r.RaftLog.committed
+	// 	msg.LogTerm = None
+	// 	r.msgs = append(r.msgs, msg)
+	// 	if flag == "copy" || flag == "all" {
+	// 		DPrintf("{Node %d} send {AppendResp: Term: %d,LogTerm: %d,Index: %d Reject: %v} to {peer: %d} in {term : %d} with {state: %v}", r.id, msg.Term, msg.LogTerm, msg.Index, msg.Reject, m.From, m.Term, r.State.String())
+	// 	}
+	// 	return
+	// }
 	// DPrintf("{Node: %d in term:%d} send {Node: %d in term: %d} %v,%v,%v", m.From, m.Term, m.To, r.Term, m.Index, m.LogTerm, m.Entries)
 	if !r.isLogmatch(m.Index, m.LogTerm) {
 		msg := pb.Message{
@@ -1093,7 +1093,17 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 		log.Infof("%v", m)
 		return
 	}
-
+	if m.Snapshot.Metadata.Index <= r.RaftLog.committed {
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppendResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Index:   r.RaftLog.LastIndex(),
+		}
+		r.msgs = append(r.msgs, msg)
+		return
+	}
 	//非过期
 	r.becomeFollower(m.Term, m.From)
 	if r.restore(m.Snapshot) {

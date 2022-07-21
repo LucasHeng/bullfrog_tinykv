@@ -3,7 +3,6 @@ package test_raftstore
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -183,11 +182,15 @@ func (c *Cluster) AllocPeer(storeID uint64) *metapb.Peer {
 
 func (c *Cluster) Request(key []byte, reqs []*raft_cmdpb.Request, timeout time.Duration) (*raft_cmdpb.RaftCmdResponse, *badger.Txn) {
 	startTime := time.Now()
+	var logresp *raft_cmdpb.RaftCmdResponse
+	log.Infof("key:%v", string(key))
 	for i := 0; i < 10 || time.Since(startTime) < timeout; i++ {
 		region := c.GetRegion(key)
+		log.Infof("key:%v find region:%v", string(key), region)
 		regionID := region.GetId()
 		req := NewRequest(regionID, region.RegionEpoch, reqs)
 		resp, txn := c.CallCommandOnLeader(&req, timeout)
+		logresp = resp
 		if resp == nil {
 			// it should be timeouted innerly
 			SleepMS(100)
@@ -199,7 +202,15 @@ func (c *Cluster) Request(key []byte, reqs []*raft_cmdpb.Request, timeout time.D
 		}
 		return resp, txn
 	}
+	PanicTest(logresp, reqs)
 	panic("request timeout")
+}
+
+func PanicTest(resp *raft_cmdpb.RaftCmdResponse, reqs []*raft_cmdpb.Request) {
+	for i, req := range reqs {
+		log.Infof("req %d:{type %v,get:%v,put:%v,del:%v,snap:%v}", i, req.CmdType, req.Get, req.Put, req.Delete, req.Snap)
+	}
+	log.Panicf("request timeout with resp:%v", resp)
 }
 
 func (c *Cluster) CallCommand(request *raft_cmdpb.RaftCmdRequest, timeout time.Duration) (*raft_cmdpb.RaftCmdResponse, *badger.Txn) {
@@ -213,7 +224,8 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 	leader := c.LeaderOfRegion(regionID)
 	for {
 		if time.Since(startTime) > timeout {
-			log.Infof("time:%v timeout:%v", time.Since(startTime), timeout)
+			// log.Infof("time:%v timeout:%v", time.Since(startTime), timeout)
+			log.Infof("time:%v timeout:%v with req:%v", time.Since(startTime), timeout, request)
 			return nil, nil
 		}
 		if leader == nil {
@@ -221,6 +233,7 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 		}
 		request.Header.Peer = leader
 		resp, txn := c.CallCommand(request, 1*time.Second)
+		// log.Infof("resp:%v", resp)
 		if resp == nil {
 			log.Debugf("can't call command %s on leader %d of region %d", request.String(), leader.GetId(), regionID)
 			newLeader := c.LeaderOfRegion(regionID)
@@ -257,6 +270,7 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 func (c *Cluster) LeaderOfRegion(regionID uint64) *metapb.Peer {
 	for i := 0; i < 500; i++ {
 		_, leader, err := c.schedulerClient.GetRegionByID(context.TODO(), regionID)
+		// log.Infof("err:%v region:%v leader:%v", err, region, leader)
 		if err == nil && leader != nil {
 			return leader
 		}
@@ -275,7 +289,8 @@ func (c *Cluster) GetRegion(key []byte) *metapb.Region {
 		// retry to get the region again.
 		SleepMS(20)
 	}
-	panic(fmt.Sprintf("find no region for %s", hex.EncodeToString(key)))
+	panic(fmt.Sprintf("find no region for %s", string(key)))
+	// panic(fmt.Sprintf("find no region for %s", hex.EncodeToString(key)))
 }
 
 func (c *Cluster) GetRandomRegion() *metapb.Region {
@@ -364,6 +379,7 @@ func (c *Cluster) Scan(start, end []byte) [][]byte {
 	key := start
 	for (len(end) != 0 && bytes.Compare(key, end) < 0) || (len(key) == 0 && len(end) == 0) {
 		resp, txn := c.Request(key, []*raft_cmdpb.Request{req}, 5*time.Second)
+		log.Infof("snap start:%v end:%v", string(start), string(end))
 		if resp.Header.Error != nil {
 			panic(resp.Header.Error)
 		}
@@ -387,7 +403,7 @@ func (c *Cluster) Scan(start, end []byte) [][]byte {
 			values = append(values, value)
 		}
 		iter.Close()
-
+		log.Infof("key:%v nextkey:%v", string(key), string(region.EndKey))
 		key = region.EndKey
 		if len(key) == 0 {
 			break

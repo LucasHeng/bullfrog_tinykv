@@ -3,6 +3,7 @@ package raftstore
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/Connor1996/badger/y"
@@ -17,7 +18,6 @@ import (
 	"github.com/pingcap-incubator/tinykv/proto/pkg/metapb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 	rspb "github.com/pingcap-incubator/tinykv/proto/pkg/raft_serverpb"
-	"github.com/pingcap-incubator/tinykv/raft"
 	"github.com/pingcap-incubator/tinykv/scheduler/pkg/btree"
 	"github.com/pingcap/errors"
 )
@@ -62,11 +62,11 @@ func (d *peerMsgHandler) HandleRaftReady() {
 		return
 	}
 
-	if result != nil && result.Region != nil {
+	if result != nil && reflect.DeepEqual(result.PrevRegion, result.Region) {
 		d.peerStorage.SetRegion(result.Region)
 		d.ctx.storeMeta.Lock()
 		// log.Infof("prevregion:%v region:%v", result.PrevRegion, result.Region)
-		// d.ctx.storeMeta.regionRanges.Delete(&regionItem{result.PrevRegion})
+		d.ctx.storeMeta.regionRanges.Delete(&regionItem{result.PrevRegion})
 		d.ctx.storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: result.Region})
 		d.ctx.storeMeta.regions[d.regionId] = d.Region()
 		d.ctx.storeMeta.Unlock()
@@ -75,9 +75,9 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	if rd.SoftState != nil {
 		// ss应该怎么弄？
 		// 如果目前软状态为leader，那么应该和scheduler通气
-		if rd.SoftState.RaftState == raft.StateLeader {
-			d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
-		}
+		// if rd.SoftState.RaftState == raft.StateLeader {
+		// d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
+		// }
 	}
 
 	// 处理messages
@@ -163,6 +163,7 @@ func (d *peerMsgHandler) getKeyFromReq(req *raft_cmdpb.Request) []byte {
 	case raft_cmdpb.CmdType_Delete:
 		key = req.Delete.Key
 	default:
+		key = nil
 	}
 	return key
 }
@@ -179,12 +180,15 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		proposal, ok := d.FindProposal(e)
 		for _, req := range msg.Requests {
 			// 检查这个key是否在当前region，没有就返回错误
-			err := util.CheckKeyInRegion(d.getKeyFromReq(req), d.Region())
-			if err != nil {
-				if ok {
-					proposal.cb.Done(ErrResp(err))
+			// snap没有key这个东西,所以不用检查
+			if key := d.getKeyFromReq(req); key != nil {
+				err := util.CheckKeyInRegion(key, d.Region())
+				if err != nil {
+					if ok {
+						proposal.cb.Done(ErrResp(err))
+					}
+					return
 				}
-				return
 			}
 			switch req.CmdType {
 			case raft_cmdpb.CmdType_Invalid:
@@ -224,15 +228,20 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 				if !ok {
 					continue
 				}
+				if msg.Header.RegionEpoch.Version != d.Region().RegionEpoch.Version {
+					proposal.cb.Done(ErrResp(&util.ErrEpochNotMatch{}))
+					return
+				}
 				d.peerStorage.applyState.AppliedIndex = e.Index
 				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
 				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
 				kvWB.Reset()
-				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
-					CmdType: raft_cmdpb.CmdType_Snap,
-					Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
-				})
-				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+				// 	resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+				// 		CmdType: raft_cmdpb.CmdType_Snap,
+				// 		Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
+				// 	})
+				log.Infof("snapreq:%v stateleader:%v", msg, d.IsLeader())
+				resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
 				proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
 			}
 
@@ -357,22 +366,16 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			if err := util.CheckRegionEpoch(msg, region, true); err != nil {
 				if err, ok := err.(*util.ErrEpochNotMatch); ok {
 					// 如果regionepoch不对，那么后续就不执行了
+					sibling := d.findSiblingRegion()
+					if sibling != nil {
+						err.Regions = append(err.Regions, sibling)
+					}
 					if exist {
 						proposal.cb.Done(ErrResp(err))
 						d.proposals = d.proposals[1:]
 					}
 					return
 				}
-			}
-
-			// 避免传错region
-			if d.regionId != msg.Header.RegionId {
-				err := &util.ErrRegionNotFound{RegionId: msg.Header.RegionId}
-				if exist {
-					proposal.cb.Done(ErrResp(err))
-					d.proposals = d.proposals[1:]
-				}
-				return
 			}
 
 			// 检查key是否在region
@@ -405,6 +408,10 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 					Version: 1,
 				},
 			}
+			peer, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newregion)
+			if err != nil {
+				panic(err)
+			}
 
 			// 修改storemeta
 			storeMeta := d.ctx.storeMeta
@@ -419,18 +426,19 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: newregion})
 
 			//修改regions
-			storeMeta.regions[newregion.Id] = newregion
+			storeMeta.setRegion(region, d.peer)
+			storeMeta.setRegion(newregion, peer)
 			storeMeta.Unlock()
 
 			// region信息持久化
 			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
 			meta.WriteRegionState(kvWB, newregion, rspb.PeerState_Normal)
 
-			// 创建peer
-			peer, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newregion)
-			if err != nil {
-				panic(err)
-			}
+			kvWB.WriteToDB(d.ctx.engine.Kv)
+			kvWB.Reset()
+
+			d.SizeDiffHint = 0
+			d.ApproximateSize = new(uint64)
 
 			// 注册新的peer
 			d.ctx.router.register(peer)
@@ -450,6 +458,8 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 				proposal.cb.Done(resp)
 				d.proposals = d.proposals[1:]
 			}
+
+			log.Infof("Node:%d split Region:%v newRegion:%v exist:%v with stateleader:%v", d.Meta.Id, d.Region(), newregion, exist, d.IsLeader())
 		default:
 			panic("unexist admincmd")
 		}
