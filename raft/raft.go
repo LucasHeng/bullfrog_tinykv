@@ -54,12 +54,17 @@ var ErrProposalDropped = errors.New("raft proposal dropped")
 type lockedRand struct {
 	mu   sync.Mutex
 	rand *rand.Rand
+	pre  int
 }
 
 func (r *lockedRand) Intn(n int) int {
 	r.mu.Lock()
 	// 防止所有重复的太多
-	v := r.rand.Intn(n)
+	var v int
+	for v == r.pre {
+		v = r.rand.Intn(n)
+	}
+	r.pre = v
 	r.mu.Unlock()
 	return v
 }
@@ -418,7 +423,7 @@ func (r *Raft) reset(term uint64) {
 
 func (r *Raft) resetrandElectionTimeout() {
 	// r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
-	r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
+	r.randElectionTimeout = r.electionTimeout + globalRand.Intn(r.electionTimeout)
 }
 
 // becomeCandidate transform this peer's state to candidate
