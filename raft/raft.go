@@ -422,8 +422,8 @@ func (r *Raft) reset(term uint64) {
 }
 
 func (r *Raft) resetrandElectionTimeout() {
-	// r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
-	r.randElectionTimeout = r.electionTimeout + globalRand.Intn(r.electionTimeout)
+	r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
+	// r.randElectionTimeout = r.electionTimeout + globalRand.Intn(r.electionTimeout)
 }
 
 // becomeCandidate transform this peer's state to candidate
