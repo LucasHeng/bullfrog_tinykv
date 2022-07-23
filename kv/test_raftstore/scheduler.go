@@ -473,7 +473,7 @@ func (m *MockSchedulerClient) findRegion(key []byte) *regionItem {
 	if result == nil || !result.Contains(key) {
 		return nil
 	}
-	log.Infof("key:%v success find:%v %v", string(key), string(result.region.StartKey), string(result.region.EndKey))
+	// log.Infof("key:%v success find:%v %v", string(key), string(result.region.StartKey), string(result.region.EndKey))
 	return result
 }
 

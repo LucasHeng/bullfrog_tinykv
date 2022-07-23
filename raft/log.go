@@ -213,7 +213,7 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 	lastindex := l.LastIndex()
 	// log.Infof("dummyindex:%d lastindex:%d i:%d stable:%d", dummyindex, lastindex, i, l.stabled)
 	if i < dummyindex || i > lastindex {
-		log.Infof("index out of range")
+		// log.Infof("index out of range")
 		return 0, nil
 	}
 
@@ -305,7 +305,7 @@ func (l *RaftLog) findentries(lo uint64, hi uint64) ([]pb.Entry, error) {
 	var ents []pb.Entry
 	// 如果有一部分在storage里面，先找那一部分
 	if lo <= l.stabled {
-		log.Infof("Node:%d lo:%d hi:%d stable:%d", l.id, lo, hi, l.stabled)
+		// log.Infof("Node:%d lo:%d hi:%d stable:%d", l.id, lo, hi, l.stabled)
 		stable_ents, err := l.storage.Entries(lo, min(hi, l.stabled+1))
 		if err != nil {
 			if err == ErrCompacted {
@@ -456,7 +456,7 @@ func (l *RaftLog) matchTerm(i, term uint64) bool {
 }
 
 func (l *RaftLog) restore(s *pb.Snapshot) {
-	log.Infof("log [%v] starts to restore snapshot [index: %d, term: %d]", l, s.Metadata.Index, s.Metadata.Term)
+	// log.Infof("log [%v] starts to restore snapshot [index: %d, term: %d]", l, s.Metadata.Index, s.Metadata.Term)
 	// 这里不能用commitTo
 	l.committed = s.Metadata.Index
 	l.stabled = s.Metadata.Index

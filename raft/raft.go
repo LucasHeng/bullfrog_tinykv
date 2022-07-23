@@ -290,7 +290,7 @@ func (r *Raft) sendAppend(to uint64) bool {
 		msg.Snapshot = &snap
 		r.msgs = append(r.msgs, msg)
 		r.Prs[to].Next = snap.Metadata.Index + 1
-		log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d snapmeta: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Snapshot.Metadata, r.RaftLog.committed)
+		// log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d snapmeta: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Snapshot.Metadata, r.RaftLog.committed)
 	} else {
 		msg := pb.Message{
 			MsgType: pb.MessageType_MsgAppend,
@@ -314,10 +314,10 @@ func (r *Raft) sendAppend(to uint64) bool {
 		}
 		msg.Commit = r.RaftLog.committed
 		r.msgs = append(r.msgs, msg)
-		log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
+		// log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
 	}
 
-	log.Infof("Node:%d sendappend %v", r.id, ltoa(r.RaftLog))
+	// log.Infof("Node:%d sendappend %v", r.id, ltoa(r.RaftLog))
 	return true
 }
 
@@ -529,7 +529,7 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 // on `eraftpb.proto` for what msgs should be handled
 func (r *Raft) Step(m pb.Message) error {
 	// Your Code Here (2A).
-	log.Infof("Node:%d step msg:%v,SS:%v HS:%v", r.id, m, r.softState(), r.hardState())
+	// log.Infof("Node:%d step msg:%v,SS:%v HS:%v", r.id, m, r.softState(), r.hardState())
 	switch r.State {
 	case StateFollower:
 		r.stepFollower(m)
@@ -993,8 +993,8 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	lastindex := m.Index + uint64(len(m.Entries))
 	r.RaftLog.commitTo(min(lastindex, m.Commit))
 	// 打印当前日志情况
-	ents := ltoa(r.RaftLog)
-	log.Infof("Node:%d %v", r.id, ents)
+	// ents := ltoa(r.RaftLog)
+	// log.Infof("Node:%d %v", r.id, ents)
 	msg := pb.Message{
 		MsgType: pb.MessageType_MsgAppendResponse,
 		To:      m.From,
@@ -1015,11 +1015,11 @@ func (r *Raft) handleEntries(ents ...*pb.Entry) {
 	var comflictindex uint64 = None
 	for _, e := range ents {
 		if !r.isLogmatch(e.Index, e.Term) {
-			if e.Index <= r.RaftLog.LastIndex() {
-				t, _ := r.RaftLog.Term(e.Index)
-				log.Infof("found conflict at index %d [existing term: %d, conflicting term: %d]",
-					e.Index, t, e.Term)
-			}
+			// if e.Index <= r.RaftLog.LastIndex() {
+			// 	t, _ := r.RaftLog.Term(e.Index)
+			// 	log.Infof("found conflict at index %d [existing term: %d, conflicting term: %d]",
+			// 		e.Index, t, e.Term)
+			// }
 			comflictindex = e.Index
 			break
 		}
@@ -1095,7 +1095,7 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 	// Your Code Here (2C).
 	if m.Term < r.Term {
 		// 处理过期的raftsnap，扔掉
-		log.Infof("%v", m)
+		// log.Infof("%v", m)
 		return
 	}
 	if m.Snapshot.Metadata.Index <= r.RaftLog.committed {
@@ -1112,8 +1112,8 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 	//非过期
 	r.becomeFollower(m.Term, m.From)
 	if r.restore(m.Snapshot) {
-		log.Infof("Node:%x [commit: %d] restored snapshot [index: %d, term: %d]",
-			r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
+		// log.Infof("Node:%x [commit: %d] restored snapshot [index: %d, term: %d]",
+		// 	r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
 		msg := pb.Message{
 			MsgType: pb.MessageType_MsgAppendResponse,
 			To:      m.From,
@@ -1124,8 +1124,8 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 		}
 		r.msgs = append(r.msgs, msg)
 	} else {
-		log.Infof("%x [commit: %d] ignored snapshot [index: %d, term: %d]",
-			r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
+		// log.Infof("%x [commit: %d] ignored snapshot [index: %d, term: %d]",
+		//	r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
 		msg := pb.Message{
 			MsgType: pb.MessageType_MsgAppendResponse,
 			To:      m.From,
@@ -1136,11 +1136,11 @@ func (r *Raft) handleSnapshot(m pb.Message) {
 		}
 		r.msgs = append(r.msgs, msg)
 	}
-	log.Infof("commitindex:%d snap:%v", r.RaftLog.committed, r.RaftLog.pendingSnapshot)
+	// log.Infof("commitindex:%d snap:%v", r.RaftLog.committed, r.RaftLog.pendingSnapshot)
 }
 
 func (r *Raft) restore(s *pb.Snapshot) bool {
-	log.Infof("%v", s)
+	// log.Infof("%v", s)
 
 	// 已经有所有的日志了，慢慢等着应用就行
 	if s.Metadata.Index <= r.RaftLog.committed {
@@ -1152,12 +1152,12 @@ func (r *Raft) restore(s *pb.Snapshot) bool {
 	}
 
 	if r.RaftLog.matchTerm(s.Metadata.Index, s.Metadata.Term) {
-		log.Infof("%x [commit: %d, lastindex: %d, lastterm: %d] fast-forwarded commit to snapshot [index: %d, term: %d]", r.id, r.RaftLog.committed, r.RaftLog.LastIndex(), r.RaftLog.LastTerm(), s.Metadata.Index, s.Metadata.Term)
+		// log.Infof("%x [commit: %d, lastindex: %d, lastterm: %d] fast-forwarded commit to snapshot [index: %d, term: %d]", r.id, r.RaftLog.committed, r.RaftLog.LastIndex(), r.RaftLog.LastTerm(), s.Metadata.Index, s.Metadata.Term)
 		r.RaftLog.commitTo(s.Metadata.Index)
 		return false
 	}
 
-	log.Infof("%v", s)
+	// log.Infof("%v", s)
 
 	r.RaftLog.restore(s)
 	r.Prs = make(map[uint64]*Progress)

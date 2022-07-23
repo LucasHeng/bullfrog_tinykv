@@ -240,7 +240,7 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 				// 		CmdType: raft_cmdpb.CmdType_Snap,
 				// 		Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
 				// 	})
-				log.Infof("snapreq:%v stateleader:%v", msg, d.IsLeader())
+				// log.Infof("snapreq:%v stateleader:%v", msg, d.IsLeader())
 				resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
 				proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
 			}
@@ -545,6 +545,9 @@ func (d *peerMsgHandler) HandleConfchange(e *eraftpb.Entry, kvWB *engine_util.Wr
 			// 	proposal.cb.Done(ErrResp(errors.New(err)))
 			// 	return
 			// }
+			leaderID := d.LeaderId()
+			leader := d.getPeerFromCache(leaderID)
+			log.Infof("Node:%v state:%v leaderid:%v leader:%v peercache:%v  peers:%v prs:%v", d.Tag, d.peer.RaftGroup.Raft.State.String(), leaderID, leader, d.peerCache, d.peerStorage.Region().Peers, d.peer.RaftGroup.Raft.Prs)
 			d.destroyPeer()
 			return
 		}
@@ -630,7 +633,7 @@ func (d *peerMsgHandler) preProposeRaftCommand(req *raft_cmdpb.RaftCmdRequest) e
 	leaderID := d.LeaderId()
 	if !d.IsLeader() {
 		leader := d.getPeerFromCache(leaderID)
-		log.Infof("Node:%v state:%v leaderid:%v leader:%v peercache:%v  peers:%v prs:%v", d.Tag, d.peer.RaftGroup.Raft.State.String(), leaderID, leader, d.peerCache, d.peerStorage.Region().Peers, d.peer.RaftGroup.Raft.Prs)
+		// log.Infof("Node:%v state:%v leaderid:%v leader:%v peercache:%v  peers:%v prs:%v", d.Tag, d.peer.RaftGroup.Raft.State.String(), leaderID, leader, d.peerCache, d.peerStorage.Region().Peers, d.peer.RaftGroup.Raft.Prs)
 		return &util.ErrNotLeader{RegionId: regionID, Leader: leader}
 	}
 	// peer_id must be the same as peer's.
