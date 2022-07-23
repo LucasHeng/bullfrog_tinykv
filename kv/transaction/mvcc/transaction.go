@@ -89,6 +89,7 @@ func (txn *MvccTxn) GetValue(key []byte) ([]byte, error) {
 	// Your Code Here (4A).
 	keywrite := EncodeKey(key, txn.StartTS)
 	writeiter := txn.Reader.IterCF(engine_util.CfWrite)
+	defer writeiter.Close()
 	writeiter.Seek(keywrite)
 	writevalue, err := writeiter.Item().Value()
 	if err != nil {
@@ -131,7 +132,7 @@ func (txn *MvccTxn) DeleteValue(key []byte) {
 // write's commit timestamp, or an error.
 func (txn *MvccTxn) CurrentWrite(key []byte) (*Write, uint64, error) {
 	// Your Code Here (4A).
-	keywrite := EncodeKey(key, txn.StartTS)
+	keywrite := EncodeKey(key, TsMax)
 	writeiter := txn.Reader.IterCF(engine_util.CfWrite)
 	defer writeiter.Close()
 	for writeiter.Seek(keywrite); writeiter.Valid(); writeiter.Next() {
@@ -161,6 +162,27 @@ func (txn *MvccTxn) CurrentWrite(key []byte) (*Write, uint64, error) {
 // write's commit timestamp, or an error.
 func (txn *MvccTxn) MostRecentWrite(key []byte) (*Write, uint64, error) {
 	// Your Code Here (4A).
+	keywrite := EncodeKey(key, TsMax)
+	writeiter := txn.Reader.IterCF(engine_util.CfWrite)
+	defer writeiter.Close()
+	for writeiter.Seek(keywrite); writeiter.Valid(); writeiter.Next() {
+		item := writeiter.Item()
+		if !bytes.Equal(DecodeUserKey(item.Key()), key) {
+			return nil, 0, nil
+		}
+		value, err := item.Value()
+		if err != nil {
+			return nil, 0, err
+		}
+		write, err := ParseWrite(value)
+		if err != nil {
+			return nil, 0, err
+		}
+		if write == nil {
+			return nil, 0, nil
+		}
+		return write, decodeTimestamp(item.Key()), nil
+	}
 	return nil, 0, nil
 }
 
