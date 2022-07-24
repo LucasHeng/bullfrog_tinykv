@@ -163,6 +163,7 @@ func (d *peerMsgHandler) getKeyFromReq(req *raft_cmdpb.Request) []byte {
 	case raft_cmdpb.CmdType_Delete:
 		key = req.Delete.Key
 	default:
+		key = nil
 	}
 	return key
 }
@@ -179,12 +180,14 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		proposal, ok := d.FindProposal(e)
 		for _, req := range msg.Requests {
 			// 检查这个key是否在当前region，没有就返回错误
-			err := util.CheckKeyInRegion(d.getKeyFromReq(req), d.Region())
-			if err != nil {
-				if ok {
-					proposal.cb.Done(ErrResp(err))
+			if key := d.getKeyFromReq(req); key != nil {
+				err := util.CheckKeyInRegion(key, d.Region())
+				if err != nil {
+					if ok {
+						proposal.cb.Done(ErrResp(err))
+					}
+					return
 				}
-				return
 			}
 			switch req.CmdType {
 			case raft_cmdpb.CmdType_Invalid:
