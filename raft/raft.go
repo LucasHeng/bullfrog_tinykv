@@ -127,6 +127,7 @@ func (c *Config) validate() error {
 // progresses of all followers, and sends entries to the follower based on its progress.
 type Progress struct {
 	Match, Next uint64
+	Active      bool
 }
 
 type Raft struct {

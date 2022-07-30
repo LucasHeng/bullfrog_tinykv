@@ -163,6 +163,7 @@ func (d *peerMsgHandler) getKeyFromReq(req *raft_cmdpb.Request) []byte {
 	case raft_cmdpb.CmdType_Delete:
 		key = req.Delete.Key
 	default:
+		key = nil
 	}
 	return key
 }
@@ -179,10 +180,20 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 		proposal, ok := d.FindProposal(e)
 		for _, req := range msg.Requests {
 			// 检查这个key是否在当前region，没有就返回错误
-			err := util.CheckKeyInRegion(d.getKeyFromReq(req), d.Region())
-			if err != nil {
+			if key := d.getKeyFromReq(req); key != nil {
+				err := util.CheckKeyInRegion(key, d.Region())
+				if err != nil {
+					if ok {
+						proposal.cb.Done(ErrResp(err))
+					}
+					return
+				}
+			}
+			// 如果版本不对，那么就扔掉
+			if msg.Header.RegionEpoch.Version != d.Region().RegionEpoch.Version {
 				if ok {
-					proposal.cb.Done(ErrResp(err))
+					proposal.cb.Done(ErrResp(&util.ErrEpochNotMatch{}))
+					d.proposals = d.proposals[1:]
 				}
 				return
 			}
@@ -357,6 +368,10 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			if err := util.CheckRegionEpoch(msg, region, true); err != nil {
 				if err, ok := err.(*util.ErrEpochNotMatch); ok {
 					// 如果regionepoch不对，那么后续就不执行了
+					sibling := d.findSiblingRegion()
+					if sibling != nil {
+						err.Regions = append(err.Regions, sibling)
+					}
 					if exist {
 						proposal.cb.Done(ErrResp(err))
 						d.proposals = d.proposals[1:]
@@ -406,6 +421,12 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 				},
 			}
 
+			// 创建peer
+			peer, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newregion)
+			if err != nil {
+				panic(err)
+			}
+
 			// 修改storemeta
 			storeMeta := d.ctx.storeMeta
 			storeMeta.Lock()
@@ -419,18 +440,19 @@ func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBa
 			storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: newregion})
 
 			//修改regions
-			storeMeta.regions[newregion.Id] = newregion
+			storeMeta.setRegion(region, d.peer)
+			storeMeta.setRegion(newregion, peer)
 			storeMeta.Unlock()
 
 			// region信息持久化
 			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
 			meta.WriteRegionState(kvWB, newregion, rspb.PeerState_Normal)
 
-			// 创建peer
-			peer, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newregion)
-			if err != nil {
-				panic(err)
-			}
+			kvWB.WriteToDB(d.ctx.engine.Kv)
+			kvWB.Reset()
+
+			d.SizeDiffHint = 0
+			d.ApproximateSize = nil
 
 			// 注册新的peer
 			d.ctx.router.register(peer)
@@ -1134,6 +1156,11 @@ func (d *peerMsgHandler) validateSplitRegion(epoch *metapb.RegionEpoch, splitKey
 }
 
 func (d *peerMsgHandler) onApproximateRegionSize(size uint64) {
+	if d.ApproximateSize == nil {
+		d.SizeDiffHint = size
+	} else {
+		d.SizeDiffHint += (size - *d.ApproximateSize)
+	}
 	d.ApproximateSize = &size
 }
 
