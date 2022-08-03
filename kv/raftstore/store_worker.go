@@ -224,6 +224,7 @@ func (d *storeWorker) maybeCreatePeer(regionID uint64, msg *rspb.RaftMessage) (b
 	}
 	// following snapshot may overlap, should insert into regionRanges after
 	// snapshot is applied.
+	log.Infof("lab 3b %d %d", regionID, msg.ToPeer.Id)
 	meta.regions[regionID] = peer.Region()
 	d.ctx.router.register(peer)
 	_ = d.ctx.router.send(regionID, message.Msg{Type: message.MsgTypeStart})

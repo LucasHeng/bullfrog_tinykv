@@ -36,6 +36,7 @@ func createPeer(storeID uint64, cfg *config.Config, sched chan<- worker.Task,
 	engines *engine_util.Engines, region *metapb.Region) (*peer, error) {
 	metaPeer := util.FindPeer(region, storeID)
 	if metaPeer == nil {
+		// 目前这个region里面是没有这个store的peer,因此报了错
 		return nil, errors.Errorf("find no peer for store %d in region %v", storeID, region)
 	}
 	log.Infof("region %v create peer with ID %d", region, metaPeer.Id)

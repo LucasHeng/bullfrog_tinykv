@@ -17,8 +17,12 @@ package raft
 import (
 	"errors"
 	"math/rand"
+	"sync"
+	"time"
 
+	"github.com/pingcap-incubator/tinykv/log"
 	pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
+	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 )
 
 // None is a placeholder node ID used when there is no leader.
@@ -46,6 +50,23 @@ func (st StateType) String() string {
 // ErrProposalDropped is returned when the proposal is ignored by some cases,
 // so that the proposer can be notified and fail fast.
 var ErrProposalDropped = errors.New("raft proposal dropped")
+
+type lockedRand struct {
+	mu   sync.Mutex
+	rand *rand.Rand
+}
+
+func (r *lockedRand) Intn(n int) int {
+	r.mu.Lock()
+	// 防止所有重复的太多
+	v := r.rand.Intn(n)
+	r.mu.Unlock()
+	return v
+}
+
+var globalRand = &lockedRand{
+	rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+}
 
 // Config contains the parameters to start a raft.
 type Config struct {
@@ -106,6 +127,7 @@ func (c *Config) validate() error {
 // progresses of all followers, and sends entries to the follower based on its progress.
 type Progress struct {
 	Match, Next uint64
+	Active      bool
 }
 
 type Raft struct {
@@ -162,10 +184,18 @@ type Raft struct {
 	PendingConfIndex uint64
 }
 
+// 看transfer是否结束
+func (r *Raft) Istransfer() bool {
+	return r.leadTransferee != None
+}
+
 // newRaft return a raft peer with the given config
 func newRaft(c *Config) *Raft {
 	// Your Code Here (2A).
 	// 可能是机器重启？
+	if flag == "election" {
+		DPrintf("config:%v", c)
+	}
 	if err := c.validate(); err != nil {
 		panic(err)
 	}
@@ -187,22 +217,41 @@ func newRaft(c *Config) *Raft {
 		leadTransferee:      0, //3A
 		PendingConfIndex:    0, //3A
 	}
+
+	// 用于raftlog日志
+	r.RaftLog.id = c.ID
+
+	// // 新的节点至少要有自己的prs
+	// r.Prs[r.id] = &Progress{}
+
+	// 恢复初始状态？
+	if hs, cs, err := c.Storage.InitialState(); err == nil {
+		if len(cs.Nodes) != 0 {
+			c.peers = cs.Nodes
+		}
+		r.loadState(hs)
+		DPrintf("come here:%v", hs)
+	}
+
 	// 初始化和peer相关的状态
 	for _, pid := range c.peers {
 		r.Prs[pid] = &Progress{}
 		r.votes[pid] = false
+
 	}
-	// 恢复初始状态？
-	if hs, _, err := c.Storage.InitialState(); err == nil {
-		r.loadState(hs)
-		DPrintf("come here:%v", hs)
-	}
+
 	if c.Applied > 0 {
-		r.RaftLog.appliedTo(c.Applied)
+		r.RaftLog.appliedTo(c.Applied, c.ID)
 	}
 	// 一些新term的东西需要设置，比如随机时间
 	r.becomeFollower(r.Term, None)
+	// 输出时钟节拍
+	r.PrintTime()
 	return r
+}
+
+func (r *Raft) PrintTime() {
+	DPrintf("Node:%d with RandElecttimeout:%d electtimeout:%d electelapsed:%d heartbeattimeout:%d heartbeatelapsed:%d", r.id, r.randElectionTimeout, r.electionTimeout, r.electionElapsed, r.heartbeatTimeout, r.heartbeatElapsed)
 }
 
 // sendAppend sends an append RPC with new entries (if any) and the
@@ -210,22 +259,61 @@ func newRaft(c *Config) *Raft {
 func (r *Raft) sendAppend(to uint64) bool {
 	// Your Code Here (2A).
 	process := r.Prs[to]
-	msg := pb.Message{MsgType: pb.MessageType_MsgAppend, To: to, From: r.id, Term: r.Term}
-	msg.Index = process.Next - 1
-	msg.LogTerm, _ = r.RaftLog.Term(msg.Index)
-	// 拿到的entry，转换成*entry
-	if flag == "copy" || flag == "all" {
-		// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
+	term, errt := r.RaftLog.Term(process.Next - 1)
+	ents, erre := r.RaftLog.appentries(process.Next)
+
+	if errt != nil || erre != nil {
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgSnapshot,
+			To:      to,
+			From:    r.id,
+			Term:    r.Term,
+		}
+
+		// 获取snap
+		snap, err := r.RaftLog.findSnap()
+		if err != nil {
+			if err == ErrSnapshotTemporarilyUnavailable {
+				return false
+			}
+			panic(err)
+		}
+
+		if IsEmptySnap(&snap) {
+			panic("snap is empty")
+		}
+
+		msg.Snapshot = &snap
+		r.msgs = append(r.msgs, msg)
+		// r.Prs[to].Next = snap.Metadata.Index + 1
+		log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d snapmeta: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Snapshot.Metadata, r.RaftLog.committed)
+	} else {
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppend,
+			To:      to,
+			From:    r.id,
+			Term:    r.Term,
+		}
+		msg.Index = process.Next - 1
+		msg.LogTerm = term
+		// 拿到的entry，转换成*entry
+		//if flag == "copy" || flag == "all" {
+		//	// DPrintf("line 242 {Node: %d} send {Node: %d} from lo: %d to hi: %d", r.id, to, process.Next, r.RaftLog.LastIndex()+1)
+		//}
+
+		// if len(ents) == 0 {
+		// 	return true
+		// }
+
+		for i := range ents {
+			msg.Entries = append(msg.Entries, &ents[i])
+		}
+		msg.Commit = r.RaftLog.committed
+		r.msgs = append(r.msgs, msg)
+		log.Infof("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
 	}
-	ents := r.RaftLog.findentries(process.Next, r.RaftLog.LastIndex()+1)
-	for i := range ents {
-		msg.Entries = append(msg.Entries, &ents[i])
-	}
-	msg.Commit = r.RaftLog.committed
-	r.msgs = append(r.msgs, msg)
-	if flag == "copy" || flag == "all" {
-		DPrintf("{Node %d} in {term: %d} send {Node: %d} {Appendmsg: Idx: %d LogTerm: %d ents: %v} with committed: %d", r.id, r.Term, to, msg.Index, msg.LogTerm, msg.Entries, r.RaftLog.committed)
-	}
+
+	log.Infof("Node:%d sendappend %v", r.id, ltoa(r.RaftLog))
 	return true
 }
 
@@ -236,13 +324,23 @@ func (r *Raft) sendHeartbeat(to uint64) {
 	if flag == "copy" || flag == "all" {
 		DPrintf("{Node: %d} send heartbeat to {Node: %d} m.committed: %d", r.id, to, r.RaftLog.committed)
 	}
-	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeat, To: to, From: r.id, Term: r.Term, Commit: r.RaftLog.committed}
+	commit := min(r.RaftLog.committed, r.Prs[to].Match)
+	msg := pb.Message{
+		MsgType: pb.MessageType_MsgHeartbeat,
+		To:      to,
+		From:    r.id,
+		Term:    r.Term,
+		Commit:  commit,
+	}
 	r.msgs = append(r.msgs, msg)
 }
 
 // tick advances the internal logical clock by a single tick.
 func (r *Raft) tick() {
 	// Your Code Here (2A).
+	if r.id > 5 {
+		r.PrintTime()
+	}
 	switch r.State {
 	case StateFollower, StateCandidate:
 		r.tickElection()
@@ -255,8 +353,10 @@ func (r *Raft) tickElection() {
 	r.electionElapsed++
 	if r.electionElapsed >= r.randElectionTimeout {
 		// 超过时间了,开始新的选举
+		DPrintf("Node:%d begin hup", r.id)
 		r.electionElapsed = 0
 		m := pb.Message{To: None, MsgType: pb.MessageType_MsgHup, From: r.id}
+		r.PrintTime()
 		r.Step(m)
 	}
 }
@@ -264,6 +364,19 @@ func (r *Raft) tickElection() {
 func (r *Raft) tickHeartbeat() {
 	// 心跳时间+1
 	r.heartbeatElapsed++
+	r.electionElapsed++
+
+	if r.electionElapsed >= r.electionTimeout {
+		r.electionElapsed = 0
+		if r.State == StateLeader && r.leadTransferee != None {
+			r.abortLeaderTransfer()
+		}
+	}
+
+	if r.State != StateLeader {
+		return
+	}
+
 	if r.heartbeatElapsed >= r.heartbeatTimeout {
 		// 发生心跳
 		r.heartbeatElapsed = 0
@@ -286,11 +399,14 @@ func (r *Raft) reset(term uint64) {
 		r.Term = term
 		r.Vote = None
 	}
+	// 重置时间和leade
 	r.Lead = None
 	r.resetrandElectionTimeout()
 	r.heartbeatElapsed = 0
 	r.electionElapsed = 0
 	r.PendingConfIndex = 0
+
+	r.abortLeaderTransfer()
 	// 重置选票
 	r.votes = make(map[uint64]bool)
 	// 重置progress
@@ -302,6 +418,7 @@ func (r *Raft) reset(term uint64) {
 }
 
 func (r *Raft) resetrandElectionTimeout() {
+	// r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
 	r.randElectionTimeout = r.electionTimeout + rand.Intn(r.electionTimeout)
 }
 
@@ -335,8 +452,11 @@ func (r *Raft) becomeLeader() {
 			break
 		}
 	}
-	if N != r.RaftLog.committed {
-		r.RaftLog.committed = N
+	// raft figure 8
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && r.Term == committerm {
+		To2B("Node:%d commitTo:%d with apply:%d  precommit:%d  stable:%d and LastIndex:%d", r.id, N, r.RaftLog.applied, r.RaftLog.committed, r.RaftLog.stabled, r.RaftLog.LastIndex())
+		r.RaftLog.commitTo(N)
 		r.broadcastAppend()
 	}
 	if flag == "election" || flag == "all" {
@@ -358,8 +478,24 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 	for i := range ents {
 		ents[i].Term = r.Term
 		ents[i].Index = lastindex + 1 + uint64(i)
-		r.Prs[r.id].Match = ents[i].Index
-		r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		// DPrintf("%v %v %v", r.Prs, r.Prs[r.id], ents[i])
+		if ents[i].EntryType == pb.EntryType_EntryConfChange {
+			if r.PendingConfIndex > r.RaftLog.applied {
+				return
+			}
+			r.PendingConfIndex = lastindex + 1 + uint64(i)
+		}
+		if _, ok := r.Prs[r.id]; ok {
+			r.Prs[r.id].Match = ents[i].Index
+			r.Prs[r.id].Next = r.Prs[r.id].Match + 1
+		} else {
+			r.Prs[r.id] = &Progress{
+				Match: ents[i].Index,
+				Next:  ents[i].Index + 1,
+			}
+		}
+		// r.Prs[r.id].Match = ents[i].Index
+		// r.Prs[r.id].Next = r.Prs[r.id].Match + 1
 	}
 	r.RaftLog.AppendEntries(ents...)
 	N := r.RaftLog.LastIndex()
@@ -374,11 +510,13 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 			break
 		}
 	}
-	if N != r.RaftLog.committed {
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && committerm == r.Term {
 		if flag == "election" || flag == "all" {
 			DPrintf("{Node :%d} changed {commited: %d}", r.id, N)
 		}
-		r.RaftLog.committed = N
+		To2B("Node:%d commitTo:%d with apply:%d  precommit:%d  stable:%d and LastIndex:%d", r.id, N, r.RaftLog.applied, r.RaftLog.committed, r.RaftLog.stabled, r.RaftLog.LastIndex())
+		r.RaftLog.commitTo(N)
 		r.broadcastAppend()
 	}
 }
@@ -387,6 +525,7 @@ func (r *Raft) AppendEntries(ents ...*pb.Entry) {
 // on `eraftpb.proto` for what msgs should be handled
 func (r *Raft) Step(m pb.Message) error {
 	// Your Code Here (2A).
+	log.Infof("Node:%d step msg:%v,SS:%v HS:%v", r.id, m, r.softState(), r.hardState())
 	switch r.State {
 	case StateFollower:
 		r.stepFollower(m)
@@ -426,6 +565,9 @@ func (r *Raft) stepFollower(m pb.Message) {
 
 	case pb.MessageType_MsgTimeoutNow:
 		// 开始新的选举
+		if _, ok := r.Prs[r.id]; !ok {
+			return
+		}
 		r.hup()
 	}
 }
@@ -454,7 +596,7 @@ func (r *Raft) hup() {
 			r.msgs = append(r.msgs, msg)
 		}
 	}
-	// 若只有一个raft
+	// 若只有一个raft,检查是否可以成为leader
 	granted, reject := r.countVote()
 	if granted > len(r.Prs)/2 {
 		r.becomeLeader()
@@ -511,7 +653,12 @@ func (r *Raft) stepCandidate(m pb.Message) {
 
 	case pb.MessageType_MsgTimeoutNow:
 		// 开始新的选举
-		r.hup()
+		// if _, ok := r.Prs[r.id]; !ok {
+		// 	// 自己不存在了
+		// 	return
+		// }
+		// r.hup()
+		log.Debugf("%x [term %d state %v] ignored MsgTimeoutNow from %x", r.id, r.Term, r.State, m.From)
 	}
 }
 
@@ -520,7 +667,13 @@ func (r *Raft) handleRequestVote(m pb.Message) {
 	// 收到了投票请求
 	if r.Term > m.Term {
 		// 如果term比候选者大，则拒绝
-		msg := pb.Message{MsgType: pb.MessageType_MsgRequestVoteResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgRequestVoteResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Reject:  true,
+		}
 		r.msgs = append(r.msgs, msg)
 		if flag == "election" || flag == "all" {
 			DPrintf("{Node: %d} send {requestResp:Term: %d, Reject: %v} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
@@ -534,7 +687,13 @@ func (r *Raft) handleRequestVote(m pb.Message) {
 	// 因为前面的操作，所以现在当前raft的term一定是与m的term一样的
 	// 因为前面的设置，可能出现vote为None，而lead不为None，这个时候也不能投票
 	if ((r.Vote == None && r.Lead == None) || r.Vote == m.From) && r.RaftLog.isUpToDate(m.Index, m.LogTerm) {
-		msg := pb.Message{MsgType: pb.MessageType_MsgRequestVoteResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgRequestVoteResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Reject:  false,
+		}
 		r.msgs = append(r.msgs, msg)
 		// 投票了，那么就要重置竞选时间
 		r.Vote = m.From
@@ -543,7 +702,13 @@ func (r *Raft) handleRequestVote(m pb.Message) {
 			DPrintf("{Node: %d} send {requestResp:Term: %d, Reject: %v} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
 		}
 	} else {
-		msg := pb.Message{MsgType: pb.MessageType_MsgRequestVoteResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgRequestVoteResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Reject:  true,
+		}
 		r.msgs = append(r.msgs, msg)
 		if flag == "election" || flag == "all" {
 			DPrintf("{Node: %d} send {requestResp:Term: %d, Reject: %v} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
@@ -568,6 +733,17 @@ func (r *Raft) stepLeader(m pb.Message) {
 		// 当前leader在转换？
 		// 先给自己添加entries
 		// 再给所有的peer发送
+		if r.Prs[r.id] == nil {
+			// If we are not currently a member of the range (i.e. this node
+			// was removed from the configuration while serving as leader),
+			// drop any new proposals.
+			return
+		}
+		r.printMessage(m, "HandlePropose")
+		if r.leadTransferee != None {
+			r.printMessage(m, "leadtransfering")
+			return
+		}
 		r.AppendEntries(m.Entries...)
 		r.broadcastAppend()
 	case pb.MessageType_MsgAppend:
@@ -578,17 +754,71 @@ func (r *Raft) stepLeader(m pb.Message) {
 	case pb.MessageType_MsgRequestVote:
 		r.handleRequestVote(m)
 	case pb.MessageType_MsgRequestVoteResponse:
+	case pb.MessageType_MsgHeartbeat:
+		// leader也会收到heartbeat,处理一下，提前达成单主共识
+		// 两个主不会是同一个term的
+		r.handleHeartbeat(m)
 	case pb.MessageType_MsgHeartbeatResponse:
-		pr := r.Prs[m.From]
-		if pr.Match < r.RaftLog.LastIndex() {
+		if m.Term > r.Term {
+			r.becomeFollower(m.Term, None)
+			return
+		}
+		lastTerm := r.RaftLog.LastTerm()
+		if lastTerm == r.Term || (lastTerm == m.LogTerm && r.RaftLog.LastIndex() > m.Index) {
 			r.sendAppend(m.From)
 		}
+	case pb.MessageType_MsgTransferLeader:
+		// 判断leadTransferee
+		pr, ok := r.Prs[m.From]
+		if !ok {
+			// 不存在扔掉
+			DPrintf("not exist?")
+			return
+		}
+		leadTransferee := m.From
+		lastLeadTransferee := r.leadTransferee
+		if lastLeadTransferee != None {
+			// 上一轮还有leadtransfer未完成
+			if lastLeadTransferee == leadTransferee {
+				// 重复发送，不用管
+				return
+			}
+			r.abortLeaderTransfer()
+		}
+		if leadTransferee == r.id {
+			// 转换成自己，扔掉
+			return
+		}
+		r.electionElapsed = 0
+		r.leadTransferee = leadTransferee
+		if pr.Match == r.RaftLog.LastIndex() {
+			DPrintf("send time out:%d", leadTransferee)
+			r.sendTimeoutNow(leadTransferee)
+		} else {
+			DPrintf("sendappend:%d prs:%v", leadTransferee, pr)
+			r.sendAppend(leadTransferee)
+		}
 	}
+}
+
+func (r *Raft) sendTimeoutNow(to uint64) {
+	msg := pb.Message{MsgType: pb.MessageType_MsgTimeoutNow,
+		To:   to,
+		From: r.id,
+		Term: r.Term,
+	}
+	r.msgs = append(r.msgs, msg)
+}
+
+func (r *Raft) abortLeaderTransfer() {
+	r.leadTransferee = None
 }
 
 // 处理appendResponse
 func (r *Raft) handleAppendResponse(m pb.Message) {
 	// 收到消息
+	r.printMessage(m, "HandleAppendResponse")
+
 	if flag == "copy" || flag == "all" {
 		DPrintf("{Node: %d} receive appeendresp from {peer %d} in {term : %d}with {state: %v}", r.id, m.From, m.Term, r.State.String())
 	}
@@ -605,7 +835,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 		// 则可以往前探测
 		if m.Reject && m.LogTerm != None {
 			// 拒绝了
-			matchindex, _ = r.RaftLog.Findconflictbyterm(m.Index, m.LogTerm)
+			matchindex, _ = r.RaftLog.findConflictbyterm(m.Index, m.LogTerm)
 		}
 		if m.Reject {
 			progress.Next = min(matchindex+1, progress.Next-1)
@@ -613,6 +843,7 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 			progress.Next = matchindex + 1
 			progress.Match = matchindex
 		}
+		// 检测提交
 		N := r.RaftLog.LastIndex()
 		for ; N > r.RaftLog.committed; N-- {
 			cnt := 1
@@ -625,17 +856,67 @@ func (r *Raft) handleAppendResponse(m pb.Message) {
 				break
 			}
 		}
+		// 只提交当前term的log
 		committerm, _ := r.RaftLog.Term(N)
 		if N != r.RaftLog.committed && committerm == r.Term {
 			// 只提交当前term的log
+			To2B("Node:%d commitTo:%d with apply:%d  precommit:%d  stable:%d and LastIndex:%d", r.id, N, r.RaftLog.applied, r.RaftLog.committed, r.RaftLog.stabled, r.RaftLog.LastIndex())
 			r.RaftLog.commitTo(N)
 			r.broadcastAppend()
 		}
+		// 如果还有log没有发送匹配，立即发送消息
 		lastindex := r.RaftLog.LastIndex()
 		if progress.Next <= lastindex {
 			r.sendAppend(m.From)
 		}
+
+		if m.From == r.leadTransferee && progress.Match == r.RaftLog.LastIndex() {
+			r.sendTimeoutNow(m.From)
+		}
 	}
+}
+
+func (r *Raft) updateCommit() {
+	N := r.RaftLog.LastIndex()
+	for ; N > r.RaftLog.committed; N-- {
+		cnt := 1
+		for id := range r.Prs {
+			if id != r.id && r.Prs[id].Match >= N {
+				cnt++
+			}
+		}
+		if cnt > len(r.Prs)/2 {
+			break
+		}
+	}
+	// 只提交当前term的log
+	committerm, _ := r.RaftLog.Term(N)
+	if N != r.RaftLog.committed && committerm == r.Term {
+		// 只提交当前term的log
+		To2B("Node:%d commitTo:%d with apply:%d  precommit:%d  stable:%d and LastIndex:%d", r.id, N, r.RaftLog.applied, r.RaftLog.committed, r.RaftLog.stabled, r.RaftLog.LastIndex())
+		r.RaftLog.commitTo(N)
+		r.broadcastAppend()
+	}
+}
+
+type Printmsg struct {
+	Term  uint64
+	Index uint64
+	Msg   raft_cmdpb.RaftCmdRequest
+	Text  string
+}
+
+func (r *Raft) printMessage(m pb.Message, head string) {
+	msgs := make([]Printmsg, 0)
+	if len(m.Entries) != 0 {
+		for _, e := range m.Entries {
+			cmd := &raft_cmdpb.RaftCmdRequest{}
+			cmd.Unmarshal(e.Data)
+			msgs = append(msgs, Printmsg{Term: e.Term, Index: e.Index, Msg: *cmd})
+		}
+	}
+	To2B("%s:{Node %d} recieve from Node:%d {msg:%v Term: %d; logTerm: %d Index:%d Entries:%v Commit:%d Reject:%v} in {term : %d} with {state: %v}", head, r.id, m.From, m.MsgType, m.Term, m.LogTerm, m.Index, msgs, m.Commit, m.Reject, r.Term, r.State.String())
+
 }
 
 // handleAppendEntries handle AppendEntries RPC request
@@ -643,10 +924,16 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	// Your Code Here (2A).
 	// 收到了append请求
 	// DPrintf("line 581 {Node: %d in term:%d } send {Node: %d in term: %d state: %v} %v,%v,%v", m.From, m.Term, m.To, r.Term, r.State.String(), m.Index, m.LogTerm, r.isLogmatch(m.Index, m.LogTerm))
-
+	r.printMessage(m, "HandleAppendEntries")
 	if r.Term > m.Term {
 		// 如果term比leader大，则拒绝
-		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppendResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Reject:  true,
+		}
 		r.msgs = append(r.msgs, msg)
 		if flag == "copy" || flag == "all" {
 			DPrintf("{Node %d} send {AppendResp: Term: %d, Reject: %v} to {peer: %d} in {term : %d} with {state: %v}", r.id, msg.Term, msg.Reject, m.From, m.Term, r.State.String())
@@ -657,10 +944,16 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	// 修改lead为m.From
 	r.becomeFollower(m.Term, m.From)
 
+	// 新leader的Index小于老leader的index，是因为分区原因
 	// 如果发送的message的消息早于commit，则这个消息应该拒绝，因为commit的entry不应该修改
 	// 回复的Index应该是已经匹配的Index
 	if m.Index < r.RaftLog.committed {
-		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppendResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+		}
 		msg.Index = r.RaftLog.committed
 		msg.LogTerm = None
 		r.msgs = append(r.msgs, msg)
@@ -669,12 +962,18 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 		}
 		return
 	}
-	DPrintf("{Node: %d in term:%d} send {Node: %d in term: %d} %v,%v,%v", m.From, m.Term, m.To, r.Term, m.Index, m.LogTerm, m.Entries)
+	// DPrintf("{Node: %d in term:%d} send {Node: %d in term: %d} %v,%v,%v", m.From, m.Term, m.To, r.Term, m.Index, m.LogTerm, m.Entries)
 	if !r.isLogmatch(m.Index, m.LogTerm) {
-		msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: true}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppendResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Reject:  true,
+		}
 		hintindex := min(m.Index, r.RaftLog.LastIndex())
 		// 优化一次找一个为一次找多个term
-		hintindex, hintterm := r.RaftLog.Findconflictbyterm(hintindex, m.LogTerm)
+		hintindex, hintterm := r.RaftLog.findConflictbyterm(hintindex, m.LogTerm)
 
 		msg.Index = hintindex
 		msg.LogTerm = hintterm
@@ -688,8 +987,17 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	// 更新committed
 	r.handleEntries(m.Entries...)
 	lastindex := m.Index + uint64(len(m.Entries))
-	r.RaftLog.committed = min(lastindex, m.Commit)
-	msg := pb.Message{MsgType: pb.MessageType_MsgAppendResponse, To: m.From, From: r.id, Term: r.Term, Reject: false}
+	r.RaftLog.commitTo(min(lastindex, m.Commit))
+	// 打印当前日志情况
+	ents := ltoa(r.RaftLog)
+	log.Infof("Node:%d %v", r.id, ents)
+	msg := pb.Message{
+		MsgType: pb.MessageType_MsgAppendResponse,
+		To:      m.From,
+		From:    r.id,
+		Term:    r.Term,
+		Reject:  false,
+	}
 	// 成功的话，返回index+1，作为下一轮的nextIndex
 	msg.Index = r.RaftLog.LastIndex()
 	r.msgs = append(r.msgs, msg)
@@ -703,6 +1011,11 @@ func (r *Raft) handleEntries(ents ...*pb.Entry) {
 	var comflictindex uint64 = None
 	for _, e := range ents {
 		if !r.isLogmatch(e.Index, e.Term) {
+			if e.Index <= r.RaftLog.LastIndex() {
+				t, _ := r.RaftLog.Term(e.Index)
+				log.Infof("found conflict at index %d [existing term: %d, conflicting term: %d]",
+					e.Index, t, e.Term)
+			}
 			comflictindex = e.Index
 			break
 		}
@@ -717,13 +1030,16 @@ func (r *Raft) handleEntries(ents ...*pb.Entry) {
 
 // 日志匹配
 func (r *Raft) isLogmatch(index uint64, term uint64) bool {
-	logterm, _ := r.RaftLog.Term(index)
+	logterm, err := r.RaftLog.Term(index)
+	if err != nil {
+		return false
+	}
 	return logterm == term
 }
 
 // 找到对应的term的index，小于等于对应term，因为这个对应的index的term没有匹配上，
 // 那么就应该是：往前走的term应该都是小于等于term
-func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64) {
+func (l *RaftLog) findConflictbyterm(index uint64, term uint64) (uint64, uint64) {
 	conflictindex := index
 	// 最少要发committed之前的
 	for conflictindex > l.committed {
@@ -731,6 +1047,7 @@ func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64)
 		if tmpterm <= term {
 			return conflictindex, tmpterm
 		} else {
+			//要找比leader发来的消息还要小于等于的term
 			conflictindex--
 		}
 	}
@@ -740,8 +1057,15 @@ func (l *RaftLog) Findconflictbyterm(index uint64, term uint64) (uint64, uint64)
 // handleHeartbeat handle Heartbeat RPC request
 func (r *Raft) handleHeartbeat(m pb.Message) {
 	// Your Code Here (2A).
+	r.printMessage(m, "handleheartbeat")
 	if r.Term > m.Term {
-		msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term}
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgHeartbeatResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Commit:  r.RaftLog.committed,
+		}
 		r.msgs = append(r.msgs, msg)
 		if flag == "copy" || flag == "all" {
 			DPrintf("{Node: %d} send {heartbeatResp:Term: %d} to {Peer %d} in term: %d with {state: %v} ", r.id, msg.Term, m.From, m.Term, r.State.String())
@@ -749,24 +1073,110 @@ func (r *Raft) handleHeartbeat(m pb.Message) {
 		return
 	}
 	r.becomeFollower(m.Term, m.From)
+	// leader当前的commit可能比我小，所以为了防止回退
 	r.RaftLog.commitTo(min(m.Commit, r.RaftLog.LastIndex()))
-	msg := pb.Message{MsgType: pb.MessageType_MsgHeartbeatResponse, To: m.From, From: r.id, Term: r.Term}
+	ltoa(r.RaftLog)
+	msg := pb.Message{
+		MsgType: pb.MessageType_MsgHeartbeatResponse,
+		To:      m.From,
+		From:    r.id,
+		Term:    r.Term,
+		Commit:  r.RaftLog.committed,
+	}
 	r.msgs = append(r.msgs, msg)
 }
 
 // handleSnapshot handle Snapshot RPC request
 func (r *Raft) handleSnapshot(m pb.Message) {
 	// Your Code Here (2C).
+	if m.Term < r.Term {
+		// 处理过期的raftsnap，扔掉
+		log.Infof("%v", m)
+		return
+	}
+
+	//非过期
+	r.becomeFollower(m.Term, m.From)
+	if r.restore(m.Snapshot) {
+		log.Infof("Node:%x [commit: %d] restored snapshot [index: %d, term: %d]",
+			r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppendResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Index:   r.RaftLog.LastIndex(),
+			Reject:  false,
+		}
+		r.msgs = append(r.msgs, msg)
+	} else {
+		log.Infof("%x [commit: %d] ignored snapshot [index: %d, term: %d]",
+			r.id, r.RaftLog.committed, m.Snapshot.Metadata.Index, m.Snapshot.Metadata.Term)
+		msg := pb.Message{
+			MsgType: pb.MessageType_MsgAppendResponse,
+			To:      m.From,
+			From:    r.id,
+			Term:    r.Term,
+			Index:   r.RaftLog.committed,
+			Reject:  true,
+		}
+		r.msgs = append(r.msgs, msg)
+	}
+	log.Infof("commitindex:%d snap:%v", r.RaftLog.committed, r.RaftLog.pendingSnapshot)
+}
+
+func (r *Raft) restore(s *pb.Snapshot) bool {
+	log.Infof("%v", s)
+
+	// 已经有所有的日志了，慢慢等着应用就行
+	if s.Metadata.Index <= r.RaftLog.committed {
+		return false
+	}
+	if r.State != StateFollower {
+		log.Fatalf("%x should be a follower when apply shotsnap", r.id)
+		return false
+	}
+
+	if r.RaftLog.matchTerm(s.Metadata.Index, s.Metadata.Term) {
+		log.Infof("%x [commit: %d, lastindex: %d, lastterm: %d] fast-forwarded commit to snapshot [index: %d, term: %d]", r.id, r.RaftLog.committed, r.RaftLog.LastIndex(), r.RaftLog.LastTerm(), s.Metadata.Index, s.Metadata.Term)
+		r.RaftLog.commitTo(s.Metadata.Index)
+		return false
+	}
+
+	log.Infof("%v", s)
+
+	r.RaftLog.restore(s)
+	r.Prs = make(map[uint64]*Progress)
+	for _, id := range s.Metadata.ConfState.Nodes {
+		r.Prs[id] = &Progress{}
+	}
+
+	return true
 }
 
 // addNode add a new node to raft group
 func (r *Raft) addNode(id uint64) {
 	// Your Code Here (3A).
+	if _, ok := r.Prs[id]; !ok {
+		r.Prs[id] = &Progress{
+			Match: 0,
+			Next:  1,
+		}
+	}
+	r.PendingConfIndex = None
 }
 
 // removeNode remove a node from raft group
 func (r *Raft) removeNode(id uint64) {
 	// Your Code Here (3A).
+	if _, ok := r.Prs[id]; ok {
+		delete(r.Prs, id)
+		// 如果删除的是自己，那么不应该检测提交
+		if r.State == StateLeader && r.id != id {
+			r.updateCommit()
+		}
+	}
+	r.PendingConfIndex = None
 }
 
 // 加载原先的HardState
@@ -784,7 +1194,7 @@ func (r *Raft) loadState(hs pb.HardState) bool {
 func (r *Raft) countVote() (int, int) {
 	granted, reject := 0, 0
 	for _, v := range r.votes {
-		if v == true {
+		if v {
 			granted++
 		} else {
 			reject++

@@ -179,6 +179,7 @@ func (rs *RaftStorage) Start() error {
 	if err != nil {
 		return err
 	}
+	// raftRouter,有storesender,还有peersender
 	rs.raftRouter, rs.raftSystem = raftstore.CreateRaftstore(cfg)
 
 	rs.resolveWorker = worker.NewWorker("resolver", &rs.wg)

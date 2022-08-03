@@ -158,6 +158,7 @@ func TestPeerStorageClearMeta(t *testing.T) {
 	raftWB := new(engine_util.WriteBatch)
 	require.Nil(t, peerStore.clearMeta(kvWB, raftWB))
 	require.Nil(t, peerStore.Engines.WriteKV(kvWB))
+	// assert.Equal(t, 0, getMetaKeyCount(t, peerStore))
 	require.Nil(t, peerStore.Engines.WriteRaft(raftWB))
 	assert.Equal(t, 0, getMetaKeyCount(t, peerStore))
 }

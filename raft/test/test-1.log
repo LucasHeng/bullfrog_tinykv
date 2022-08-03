@@ -1,0 +1,32 @@
+=== RUN   TestLeaderStartReplication2AB
+2022/07/02 11:14:17 come here:{0 0 0 {} [] 0}
+2022/07/02 11:14:17 raft.go:278: [0;37m[info] {Node 1} in {term: 1} send {Node: 2} {Appendmsg: Idx: 0 LogTerm: 0 ents: [term:1 index:1 ]} with committed: 0[0m
+2022/07/02 11:14:17 raft.go:281: [0;37m[info] Node:1 sendappend committed: 0	applied:  0
+#0: {EntryType:EntryNormal Term:1 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/02 11:14:17 raft.go:278: [0;37m[info] {Node 1} in {term: 1} send {Node: 3} {Appendmsg: Idx: 0 LogTerm: 0 ents: [term:1 index:1 ]} with committed: 0[0m
+2022/07/02 11:14:17 raft.go:281: [0;37m[info] Node:1 sendappend committed: 0	applied:  0
+#0: {EntryType:EntryNormal Term:1 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/02 11:14:17 HandleAppendResponse:{Node 1} recieve from Node:2 {msg:MsgAppendResponse Term: 1; logTerm: 0 Index:1 Entries:[] Commit:0 Reject:false} in {term : 1} with {state: StateLeader}
+2022/07/02 11:14:17 Node:1 commitTo:1 with apply:0  precommit:0  stable:0 and LastIndex:1
+2022/07/02 11:14:17 raft.go:278: [0;37m[info] {Node 1} in {term: 1} send {Node: 3} {Appendmsg: Idx: 0 LogTerm: 0 ents: [term:1 index:1 ]} with committed: 1[0m
+2022/07/02 11:14:17 raft.go:281: [0;37m[info] Node:1 sendappend committed: 1	applied:  0
+#0: {EntryType:EntryNormal Term:1 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/02 11:14:17 HandleAppendResponse:{Node 1} recieve from Node:3 {msg:MsgAppendResponse Term: 1; logTerm: 0 Index:1 Entries:[] Commit:0 Reject:false} in {term : 1} with {state: StateLeader}
+2022/07/02 11:14:17 HandlePropose:{Node 1} recieve from Node:1 {msg:MsgPropose Term: 0; logTerm: 0 Index:0 Entries:[{0 0 }] Commit:0 Reject:false} in {term : 1} with {state: StateLeader}
+2022/07/02 11:14:17 raft.go:278: [0;37m[info] {Node 1} in {term: 1} send {Node: 2} {Appendmsg: Idx: 1 LogTerm: 1 ents: [term:1 index:1 ]} with committed: 1[0m
+2022/07/02 11:14:17 raft.go:281: [0;37m[info] Node:1 sendappend committed: 1	applied:  1
+#0: {EntryType:EntryNormal Term:1 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+#1: {EntryType:EntryNormal Term:1 Index:2 Data:[115 111 109 101 32 100 97 116 97] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+2022/07/02 11:14:17 raft.go:278: [0;37m[info] {Node 1} in {term: 1} send {Node: 3} {Appendmsg: Idx: 1 LogTerm: 1 ents: [term:1 index:1 ]} with committed: 1[0m
+2022/07/02 11:14:17 raft.go:281: [0;37m[info] Node:1 sendappend committed: 1	applied:  1
+#0: {EntryType:EntryNormal Term:1 Index:1 Data:[] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+#1: {EntryType:EntryNormal Term:1 Index:2 Data:[115 111 109 101 32 100 97 116 97] XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}
+[0m
+    raft_paper_test.go:389: msgs = [{MsgType:MsgAppend To:2 From:1 Term:1 LogTerm:1 Index:1 Entries:[term:1 index:1 ] Commit:1 Snapshot:<nil> Reject:false XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0} {MsgType:MsgAppend To:3 From:1 Term:1 LogTerm:1 Index:1 Entries:[term:1 index:1 ] Commit:1 Snapshot:<nil> Reject:false XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}], 
+        want [{MsgType:MsgAppend To:2 From:1 Term:1 LogTerm:1 Index:1 Entries:[term:1 index:2 data:"some data" ] Commit:1 Snapshot:<nil> Reject:false XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0} {MsgType:MsgAppend To:3 From:1 Term:1 LogTerm:1 Index:1 Entries:[term:1 index:2 data:"some data" ] Commit:1 Snapshot:<nil> Reject:false XXX_NoUnkeyedLiteral:{} XXX_unrecognized:[] XXX_sizecache:0}]
+--- FAIL: TestLeaderStartReplication2AB (0.00s)
+FAIL

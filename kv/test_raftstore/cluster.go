@@ -213,6 +213,7 @@ func (c *Cluster) CallCommandOnLeader(request *raft_cmdpb.RaftCmdRequest, timeou
 	leader := c.LeaderOfRegion(regionID)
 	for {
 		if time.Since(startTime) > timeout {
+			log.Infof("time:%v timeout:%v", time.Since(startTime), timeout)
 			return nil, nil
 		}
 		if leader == nil {
@@ -305,6 +306,7 @@ func (c *Cluster) MustPutCF(cf string, key, value []byte) {
 		panic(resp.Header.Error)
 	}
 	if len(resp.Responses) != 1 {
+		log.Panicf("%v", resp.Responses)
 		panic("len(resp.Responses) != 1")
 	}
 	if resp.Responses[0].CmdType != raft_cmdpb.CmdType_Put {
@@ -366,6 +368,7 @@ func (c *Cluster) Scan(start, end []byte) [][]byte {
 			panic(resp.Header.Error)
 		}
 		if len(resp.Responses) != 1 {
+			log.Panicf("%v", resp.Responses)
 			panic("len(resp.Responses) != 1")
 		}
 		if resp.Responses[0].CmdType != raft_cmdpb.CmdType_Snap {

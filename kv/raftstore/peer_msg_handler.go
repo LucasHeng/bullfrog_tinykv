@@ -1,18 +1,23 @@
 package raftstore
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/Connor1996/badger/y"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/message"
+	"github.com/pingcap-incubator/tinykv/kv/raftstore/meta"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/runner"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/snap"
 	"github.com/pingcap-incubator/tinykv/kv/raftstore/util"
+	"github.com/pingcap-incubator/tinykv/kv/util/engine_util"
 	"github.com/pingcap-incubator/tinykv/log"
+	"github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/metapb"
 	"github.com/pingcap-incubator/tinykv/proto/pkg/raft_cmdpb"
 	rspb "github.com/pingcap-incubator/tinykv/proto/pkg/raft_serverpb"
+	"github.com/pingcap-incubator/tinykv/raft"
 	"github.com/pingcap-incubator/tinykv/scheduler/pkg/btree"
 	"github.com/pingcap/errors"
 )
@@ -42,7 +47,561 @@ func (d *peerMsgHandler) HandleRaftReady() {
 	if d.stopped {
 		return
 	}
+	if !d.RaftGroup.HasReady() {
+		return
+	}
+
+	rd := d.RaftGroup.Ready()
+
+	// 处理ready,保存未持久的log然后应用commit
+	result, err := d.peerStorage.SaveReadyState(&rd)
+
+	if err != nil {
+		// error处理
+		log.Debugf("exist err:%v", err)
+		return
+	}
+
+	if result != nil && result.Region != nil {
+		d.peerStorage.SetRegion(result.Region)
+		d.ctx.storeMeta.Lock()
+		// log.Infof("prevregion:%v region:%v", result.PrevRegion, result.Region)
+		// d.ctx.storeMeta.regionRanges.Delete(&regionItem{result.PrevRegion})
+		d.ctx.storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: result.Region})
+		d.ctx.storeMeta.regions[d.regionId] = d.Region()
+		d.ctx.storeMeta.Unlock()
+	}
+
+	if rd.SoftState != nil {
+		// ss应该怎么弄？
+		// 如果目前软状态为leader，那么应该和scheduler通气
+		if rd.SoftState.RaftState == raft.StateLeader {
+			d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
+		}
+	}
+
+	// 处理messages
+	if len(rd.Messages) != 0 {
+		d.Send(d.ctx.trans, rd.Messages)
+	}
+
+	// 处理committed entries
+	if len(rd.CommittedEntries) != 0 {
+		err := d.HandleCommittedEntries(rd.CommittedEntries)
+		if err != nil {
+			log.Errorf("%v", err)
+			panic(err)
+		}
+	}
+
+	// log.Infof("Node:%d Ready apply successfully raftstate:%v and applystate:%v", d.PeerId(), d.peerStorage.raftState, d.peerStorage.applyState)
+
+	d.RaftGroup.Advance(rd)
 	// Your Code Here (2B).
+}
+
+func PanicTest() {
+
+}
+
+func (d *peerMsgHandler) HandleCommittedEntries(committedEntries []eraftpb.Entry) error {
+	kvWB := &engine_util.WriteBatch{}
+	for _, e := range committedEntries {
+		switch e.EntryType {
+		case eraftpb.EntryType_EntryNormal:
+			d.HandleEntry(&e, kvWB)
+		case eraftpb.EntryType_EntryConfChange:
+			d.HandleConfchange(&e, kvWB)
+		default:
+			panic("no exist entrytype")
+		}
+		// d.HandleEntry(&e, kvWB)
+		if d.stopped {
+			return nil
+		}
+	}
+	d.peerStorage.applyState.AppliedIndex = committedEntries[len(committedEntries)-1].Index
+	kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+	err := kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+	return err
+}
+
+func (d *peerMsgHandler) FindProposal(e *eraftpb.Entry) (*proposal, bool) {
+	if len(d.proposals) != 0 {
+		proposal := d.proposals[0]
+		// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+		for proposal.index < e.Index {
+			proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+			d.proposals = d.proposals[1:]
+			if len(d.proposals) == 0 {
+				// 没有proposal,结束这个
+				return nil, false
+			}
+			proposal = d.proposals[0]
+		}
+		if proposal.index == e.Index {
+			if proposal.term != e.Term {
+				// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+				NotifyStaleReq(e.Index, proposal.cb)
+				d.proposals = d.proposals[1:]
+				return nil, false
+			}
+
+			return proposal, true
+		}
+	}
+	return nil, false
+}
+
+func (d *peerMsgHandler) getKeyFromReq(req *raft_cmdpb.Request) []byte {
+	var key []byte
+	switch req.CmdType {
+	case raft_cmdpb.CmdType_Get:
+		key = req.Get.Key
+	case raft_cmdpb.CmdType_Put:
+		key = req.Put.Key
+	case raft_cmdpb.CmdType_Delete:
+		key = req.Delete.Key
+	default:
+		key = nil
+	}
+	return key
+}
+
+func (d *peerMsgHandler) HandleEntry(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
+	// 解码出raftcmd
+	msg := &raft_cmdpb.RaftCmdRequest{}
+	err := msg.Unmarshal(e.Data)
+	if err != nil {
+		panic(err)
+	}
+	if len(msg.Requests) != 0 {
+		resp := &raft_cmdpb.RaftCmdResponse{Header: &raft_cmdpb.RaftResponseHeader{}}
+		proposal, ok := d.FindProposal(e)
+		for _, req := range msg.Requests {
+			// 检查这个key是否在当前region，没有就返回错误
+			if key := d.getKeyFromReq(req); key != nil {
+				err := util.CheckKeyInRegion(key, d.Region())
+				if err != nil {
+					if ok {
+						proposal.cb.Done(ErrResp(err))
+					}
+					return
+				}
+			}
+			// 如果版本不对，那么就扔掉
+			if msg.Header.RegionEpoch.Version != d.Region().RegionEpoch.Version {
+				if ok {
+					proposal.cb.Done(ErrResp(&util.ErrEpochNotMatch{}))
+					d.proposals = d.proposals[1:]
+				}
+				return
+			}
+			switch req.CmdType {
+			case raft_cmdpb.CmdType_Invalid:
+			case raft_cmdpb.CmdType_Get:
+				// get应该返回当前值
+				if !ok {
+					continue
+				}
+				d.peerStorage.applyState.AppliedIndex = e.Index
+				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+				kvWB.Reset()
+				val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Get,
+					Get:     &raft_cmdpb.GetResponse{Value: val},
+				})
+			case raft_cmdpb.CmdType_Put:
+				kvWB.SetCF(req.Put.Cf, req.Put.GetKey(), req.Put.GetValue())
+				if !ok {
+					continue
+				}
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Put,
+					Put:     &raft_cmdpb.PutResponse{},
+				})
+			case raft_cmdpb.CmdType_Delete:
+				kvWB.DeleteCF(req.Delete.Cf, req.Delete.GetKey())
+				if !ok {
+					continue
+				}
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Delete,
+					Delete:  &raft_cmdpb.DeleteResponse{},
+				})
+			case raft_cmdpb.CmdType_Snap:
+				if !ok {
+					continue
+				}
+				d.peerStorage.applyState.AppliedIndex = e.Index
+				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+				kvWB.Reset()
+				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+					CmdType: raft_cmdpb.CmdType_Snap,
+					Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
+				})
+				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+				proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+			}
+
+			//	// 回复
+			//	if len(d.proposals) != 0 {
+			//		proposal := d.proposals[0]
+			//		// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+			//		for proposal.index < e.Index {
+			//			proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+			//			d.proposals = d.proposals[1:]
+			//			if len(d.proposals) == 0 {
+			//				// 没有proposal,结束这个
+			//				return
+			//			}
+			//			proposal = d.proposals[0]
+			//		}
+			//		if proposal.index == e.Index {
+			//			if proposal.term != e.Term {
+			//				// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+			//				NotifyStaleReq(e.Index, proposal.cb)
+			//				d.proposals = d.proposals[1:]
+			//				return
+			//			}
+
+			//			switch req.CmdType {
+			//			case raft_cmdpb.CmdType_Invalid:
+			//			case raft_cmdpb.CmdType_Get:
+			//				// get应该返回当前值
+			//				d.peerStorage.applyState.AppliedIndex = e.Index
+			//				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+			//				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+			//				kvWB.Reset()
+			//				val, _ := engine_util.GetCF(d.peerStorage.Engines.Kv, req.Get.Cf, req.Get.Key)
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Get,
+			//					Get:     &raft_cmdpb.GetResponse{Value: val},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Get, Get: &raft_cmdpb.GetResponse{
+			//				//  	Value: val,
+			//				// }}}
+			//			case raft_cmdpb.CmdType_Put:
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Put,
+			//					Put:     &raft_cmdpb.PutResponse{},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Put, Put: &raft_cmdpb.PutResponse{}}}
+			//			case raft_cmdpb.CmdType_Delete:
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Delete,
+			//					Delete:  &raft_cmdpb.DeleteResponse{},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Delete, Delete: &raft_cmdpb.DeleteResponse{}}}
+			//			case raft_cmdpb.CmdType_Snap:
+			//				d.peerStorage.applyState.AppliedIndex = e.Index
+			//				kvWB.SetMeta(meta.ApplyStateKey(d.regionId), d.peerStorage.applyState)
+			//				kvWB.WriteToDB(d.peerStorage.Engines.Kv)
+			//				kvWB.Reset()
+			//				resp.Responses = append(resp.Responses, &raft_cmdpb.Response{
+			//					CmdType: raft_cmdpb.CmdType_Snap,
+			//					Snap:    &raft_cmdpb.SnapResponse{Region: d.Region()},
+			//				})
+			//				// resp.Responses = []*raft_cmdpb.Response{{CmdType: raft_cmdpb.CmdType_Snap, Snap: &raft_cmdpb.SnapResponse{Region: d.Region()}}}
+			//				proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+			//			}
+			//			// // 对于request只有一个的情况
+			//			// d.peerStorage.Engines.Kproposal.cb.Done(resp)
+			//			// d.proposals = d.proposals[1:]
+			//		}
+			//	}
+		}
+		if ok {
+			proposal.cb.Done(resp)
+			d.proposals = d.proposals[1:]
+		}
+		// // d.proposals[0].cb.Done(resp)
+		// 先应用了，回复看是否有proposal
+		// if len(d.proposals) != 0 {
+		// 	proposal := d.proposals[0]
+		// 	// 过时的cmd的propsal都要扔掉，回复err，提醒client再发cmd
+		// 	for proposal.index < e.Index {
+		// 		proposal.cb.Done(ErrResp(&util.ErrStaleCommand{}))
+		// 		d.proposals = d.proposals[1:]
+		// 		if len(d.proposals) == 0 {
+		// 			// 没有proposal,结束这个
+		// 			return
+		// 		}
+		// 		proposal = d.proposals[0]
+		// 	}
+		// 	if proposal.index == e.Index {
+		// 		if proposal.term != e.Term {
+		// 			// term变了，证明是下一个轮回了，那么这个请求就应该扔掉
+		// 			NotifyStaleReq(e.Index, proposal.cb)
+		// 			d.proposals = d.proposals[1:]
+		// 			return
+		// 		}
+		// 		proposal.cb.Done(resp)
+		// 		if hassnap {
+		// 			proposal.cb.Txn = d.peerStorage.Engines.Kv.NewTransaction(false)
+		// 		}
+		// 		d.proposals = d.proposals[1:]
+		// 	}
+		// }
+	}
+	// 可能是都有，所以不能else if
+	if msg.AdminRequest != nil {
+		areq := msg.GetAdminRequest()
+		switch areq.CmdType {
+		case raft_cmdpb.AdminCmdType_CompactLog:
+			log := areq.GetCompactLog()
+			// 修改applystate的trun
+			if log.GetCompactIndex() >= d.peerStorage.truncatedIndex() {
+				d.peerStorage.applyState.TruncatedState.Index = log.GetCompactIndex()
+				d.peerStorage.applyState.TruncatedState.Term = log.GetCompactTerm()
+				kvWB.SetMeta(meta.ApplyStateKey(d.Region().Id), d.peerStorage.applyState)
+				d.ScheduleCompactLog(log.GetCompactIndex())
+			}
+		case raft_cmdpb.AdminCmdType_Split:
+			// 判断版本，版本不对，那么就扔掉
+			proposal, exist := d.FindProposal(e)
+
+			region := d.Region()
+			if err := util.CheckRegionEpoch(msg, region, true); err != nil {
+				if err, ok := err.(*util.ErrEpochNotMatch); ok {
+					// 如果regionepoch不对，那么后续就不执行了
+					sibling := d.findSiblingRegion()
+					if sibling != nil {
+						err.Regions = append(err.Regions, sibling)
+					}
+					if exist {
+						proposal.cb.Done(ErrResp(err))
+						d.proposals = d.proposals[1:]
+					}
+					return
+				}
+			}
+
+			// 避免传错region
+			if d.regionId != msg.Header.RegionId {
+				err := &util.ErrRegionNotFound{RegionId: msg.Header.RegionId}
+				if exist {
+					proposal.cb.Done(ErrResp(err))
+					d.proposals = d.proposals[1:]
+				}
+				return
+			}
+
+			// 检查key是否在region
+			if err := util.CheckKeyInRegion(areq.Split.SplitKey, d.Region()); err != nil {
+				if exist {
+					proposal.cb.Done(ErrResp(err))
+					d.proposals = d.proposals[1:]
+				}
+				return
+			}
+
+			// 切分后的regions的peers
+			newpeers := make([]*metapb.Peer, 0)
+			for i, peer := range region.Peers {
+				newpeers = append(newpeers, &metapb.Peer{
+					Id:      areq.Split.NewPeerIds[i],
+					StoreId: peer.StoreId,
+				})
+			}
+
+			// 创建新的region
+			// 新的region是在原region的基础上往后切
+			newregion := &metapb.Region{
+				Id:       areq.Split.NewRegionId,
+				StartKey: areq.Split.SplitKey,
+				EndKey:   region.EndKey,
+				Peers:    newpeers,
+				RegionEpoch: &metapb.RegionEpoch{
+					ConfVer: 1,
+					Version: 1,
+				},
+			}
+
+			// 创建peer
+			peer, err := createPeer(d.ctx.store.Id, d.ctx.cfg, d.ctx.regionTaskSender, d.ctx.engine, newregion)
+			if err != nil {
+				panic(err)
+			}
+
+			// 修改storemeta
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			// 修改原来region的信息
+			d.Region().EndKey = areq.Split.SplitKey
+			d.Region().RegionEpoch.Version++
+
+			// 修改上下文中的全局本region和新region
+			// 因为是全局上下文，所以leader修改，所有的region信息都会同步
+			storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: d.Region()})
+			storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: newregion})
+
+			//修改regions
+			storeMeta.setRegion(region, d.peer)
+			storeMeta.setRegion(newregion, peer)
+			storeMeta.Unlock()
+
+			// region信息持久化
+			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
+			meta.WriteRegionState(kvWB, newregion, rspb.PeerState_Normal)
+
+			kvWB.WriteToDB(d.ctx.engine.Kv)
+			kvWB.Reset()
+
+			d.SizeDiffHint = 0
+			d.ApproximateSize = nil
+
+			// 注册新的peer
+			d.ctx.router.register(peer)
+			// 启动peer
+			d.ctx.router.send(newregion.Id, message.NewMsg(message.MsgTypeStart, nil))
+			// 回调返回，分裂成功
+			if exist {
+				resp := &raft_cmdpb.RaftCmdResponse{
+					Header: &raft_cmdpb.RaftResponseHeader{},
+					AdminResponse: &raft_cmdpb.AdminResponse{
+						CmdType: raft_cmdpb.AdminCmdType_Split,
+						Split: &raft_cmdpb.SplitResponse{
+							Regions: []*metapb.Region{region, newregion},
+						},
+					},
+				}
+				proposal.cb.Done(resp)
+				d.proposals = d.proposals[1:]
+			}
+		default:
+			panic("unexist admincmd")
+		}
+	}
+}
+
+func hasPeer(region *metapb.Region, id uint64) bool {
+	for _, p := range region.GetPeers() {
+		if p.Id == id {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *peerMsgHandler) HandleConfchange(e *eraftpb.Entry, kvWB *engine_util.WriteBatch) {
+	var cc eraftpb.ConfChange
+	err := cc.Unmarshal(e.Data)
+	if err != nil {
+		panic(err)
+	}
+	msg := &raft_cmdpb.RaftCmdRequest{}
+	err = msg.Unmarshal(cc.Context)
+	if err != nil {
+		panic(err)
+	}
+
+	// 判断版本，版本不对，那么就扔掉
+	region := d.Region()
+	if err := util.CheckRegionEpoch(msg, region, true); err != nil {
+		if err, ok := err.(*util.ErrEpochNotMatch); ok {
+			// 如果regionepoch不对，那么后续就不执行了
+			if len(d.proposals) > 0 {
+				proposal, ok := d.FindProposal(e)
+				if ok {
+					proposal.cb.Done(ErrResp(err))
+					d.proposals = d.proposals[1:]
+					return
+				}
+			}
+		}
+		return
+	}
+	//
+	switch cc.ChangeType {
+	case eraftpb.ConfChangeType_AddNode:
+		// 没有就加上
+		if !hasPeer(d.Region(), cc.GetNodeId()) {
+			d.Region().RegionEpoch.ConfVer++
+			peer := &metapb.Peer{
+				Id:      cc.GetNodeId(),
+				StoreId: msg.AdminRequest.ChangePeer.Peer.StoreId,
+			}
+			d.Region().Peers = append(d.Region().Peers, peer)
+			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			storeMeta.regions[d.Region().GetId()] = d.Region()
+			storeMeta.Unlock()
+			d.insertPeerCache(peer)
+		}
+	case eraftpb.ConfChangeType_RemoveNode:
+		// 要删除的节点是自己
+		if cc.NodeId == d.PeerId() {
+			// if len(region.Peers) == 2 && d.IsLeader() {
+			// 	// var to uint64
+			// 	// for _, p := range region.Peers {
+			// 	// 	if p.Id != cc.NodeId {
+			// 	// 		to = p.Id
+			// 	// 	}
+			// 	// }
+			// 	// if to != 0 {
+			// 	// 	log.Infof("Node:%d transferleader to %d", d.PeerId(), to)
+			// 	// 	d.RaftGroup.TransferLeader(to)
+			// 	// }
+			// 	// // 等待 transfer success
+			// 	// return
+			// 	proposal, ok := d.FindProposal(e)
+			// 	if !ok {
+			// 		return
+			// 	}
+			// 	err := fmt.Sprintf("%s return corner case\n", d.Tag)
+			// 	proposal.cb.Done(ErrResp(errors.New(err)))
+			// 	return
+			// }
+			d.destroyPeer()
+			return
+		}
+
+		if hasPeer(d.Region(), cc.GetNodeId()) {
+			d.Region().RegionEpoch.ConfVer++
+			for i, p := range d.Region().GetPeers() {
+				if p.Id == cc.GetNodeId() {
+					d.Region().Peers = append(d.Region().Peers[:i], d.Region().Peers[i+1:]...)
+					break
+				}
+			}
+			// region信息改变，持久化
+			meta.WriteRegionState(kvWB, d.Region(), rspb.PeerState_Normal)
+			// 跟新globalcontext里的storeMeta
+			storeMeta := d.ctx.storeMeta
+			storeMeta.Lock()
+			storeMeta.regions[d.Region().Id] = d.Region()
+			storeMeta.Unlock()
+			// 修改peer Cache
+			d.removePeerCache(cc.NodeId)
+		}
+	}
+
+	// 幂等的，所以可以多次调用?
+	d.RaftGroup.ApplyConfChange(cc)
+
+	// 更新scheduler中的信息
+	if d.IsLeader() {
+		d.HeartbeatScheduler(d.ctx.schedulerTaskSender)
+	}
+
+	proposal, ok := d.FindProposal(e)
+	resp := &raft_cmdpb.RaftCmdResponse{
+		Header: &raft_cmdpb.RaftResponseHeader{},
+		AdminResponse: &raft_cmdpb.AdminResponse{
+			CmdType:    raft_cmdpb.AdminCmdType_ChangePeer,
+			ChangePeer: &raft_cmdpb.ChangePeerResponse{Region: d.Region()},
+		},
+	}
+	if ok {
+		proposal.cb.Done(resp)
+		d.proposals = d.proposals[1:]
+		return
+	}
 }
 
 func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
@@ -55,6 +614,7 @@ func (d *peerMsgHandler) HandleMsg(msg message.Msg) {
 	case message.MsgTypeRaftCmd:
 		raftCMD := msg.Data.(*message.MsgRaftCmd)
 		d.proposeRaftCommand(raftCMD.Request, raftCMD.Callback)
+		// log.Infof("cmd:%v", raftCMD)
 	case message.MsgTypeTick:
 		d.onTick()
 	case message.MsgTypeSplitRegion:
@@ -82,6 +642,7 @@ func (d *peerMsgHandler) preProposeRaftCommand(req *raft_cmdpb.RaftCmdRequest) e
 	leaderID := d.LeaderId()
 	if !d.IsLeader() {
 		leader := d.getPeerFromCache(leaderID)
+		log.Infof("Node:%v state:%v leaderid:%v leader:%v peercache:%v  peers:%v prs:%v", d.Tag, d.peer.RaftGroup.Raft.State.String(), leaderID, leader, d.peerCache, d.peerStorage.Region().Peers, d.peer.RaftGroup.Raft.Prs)
 		return &util.ErrNotLeader{RegionId: regionID, Leader: leader}
 	}
 	// peer_id must be the same as peer's.
@@ -114,6 +675,79 @@ func (d *peerMsgHandler) proposeRaftCommand(msg *raft_cmdpb.RaftCmdRequest, cb *
 		return
 	}
 	// Your Code Here (2B).
+	// 放入回调
+	if msg.Requests != nil {
+		d.proposals = append(d.proposals, &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		})
+		// log.Infof("msg:%v", msg)
+		// 往raftnode发propose
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.Propose(data)
+	} else if msg.AdminRequest != nil {
+		d.proposeAdminRequest(msg, cb)
+	}
+}
+
+func (d *peerMsgHandler) proposeAdminRequest(msg *raft_cmdpb.RaftCmdRequest, cb *message.Callback) {
+	switch msg.AdminRequest.CmdType {
+	case raft_cmdpb.AdminCmdType_CompactLog:
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.Propose(data)
+	case raft_cmdpb.AdminCmdType_TransferLeader:
+		// 通过rawnode执行transferleader
+		resp := &raft_cmdpb.RaftCmdResponse{
+			Header:        &raft_cmdpb.RaftResponseHeader{},
+			AdminResponse: &raft_cmdpb.AdminResponse{CmdType: raft_cmdpb.AdminCmdType_TransferLeader},
+		}
+		d.RaftGroup.TransferLeader(msg.AdminRequest.TransferLeader.Peer.Id)
+		cb.Done(resp)
+	case raft_cmdpb.AdminCmdType_ChangePeer:
+		// 这个也需要进行raft复制
+		// 保证每时每刻只有一个confchange
+		if d.RaftGroup.Raft.PendingConfIndex > d.peerStorage.AppliedIndex() {
+			return
+		}
+		if (msg.AdminRequest.ChangePeer.ChangeType == eraftpb.ConfChangeType_RemoveNode) && d.IsLeader() && len(d.peerCache) == 2 && msg.AdminRequest.ChangePeer.Peer.Id == d.PeerId() {
+			return
+		}
+		d.proposals = append(d.proposals, &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		})
+		data, err := msg.Marshal()
+		if err != nil {
+			panic(err)
+		}
+		d.RaftGroup.ProposeConfChange(eraftpb.ConfChange{
+			ChangeType: msg.AdminRequest.ChangePeer.ChangeType,
+			NodeId:     msg.AdminRequest.ChangePeer.Peer.Id,
+			Context:    data,
+		})
+	case raft_cmdpb.AdminCmdType_Split:
+		if err := util.CheckKeyInRegion(msg.AdminRequest.Split.SplitKey, d.Region()); err != nil {
+			cb.Done(ErrResp(err))
+			return
+		}
+		d.proposals = append(d.proposals, &proposal{
+			index: d.nextProposalIndex(),
+			term:  d.Term(),
+			cb:    cb,
+		})
+		data, _ := msg.Marshal()
+		d.RaftGroup.Propose(data)
+	default:
+		panic("no such admin request")
+	}
 }
 
 func (d *peerMsgHandler) onTick() {
@@ -134,6 +768,18 @@ func (d *peerMsgHandler) onTick() {
 		d.onSplitRegionCheckTick()
 	}
 	d.ctx.tickDriverSender <- d.regionId
+}
+
+func (d *peerMsgHandler) syncRegion() {
+	newregion, _, err := d.ctx.schedulerClient.GetRegionByID(context.TODO(), d.Region().Id)
+	region := d.Region()
+	if err != nil {
+		return
+	}
+	// 这里只进行
+	if util.RegionEqual(newregion, region) {
+		return
+	}
 }
 
 func (d *peerMsgHandler) startTicker() {
@@ -380,14 +1026,17 @@ func (d *peerMsgHandler) destroyPeer() {
 		// data too.
 		panic(fmt.Sprintf("%s destroy peer %v", d.Tag, err))
 	}
+	// store里面删除regionid的peer，store不会再发送给peer消息
 	d.ctx.router.close(regionID)
 	d.stopped = true
+	// store维护的关于region的B tree，进行修改
 	if isInitialized && meta.regionRanges.Delete(&regionItem{region: d.Region()}) == nil {
 		panic(d.Tag + " meta corruption detected")
 	}
 	if _, ok := meta.regions[regionID]; !ok {
 		panic(d.Tag + " meta corruption detected")
 	}
+	// store的regions的map的region删除
 	delete(meta.regions, regionID)
 }
 
@@ -445,9 +1094,11 @@ func (d *peerMsgHandler) onSplitRegionCheckTick() {
 		return
 	}
 
+	// leader才检查是否需要split
 	if !d.IsLeader() {
 		return
 	}
+
 	if d.ApproximateSize != nil && d.SizeDiffHint < d.ctx.cfg.RegionSplitSize/8 {
 		return
 	}
@@ -505,6 +1156,11 @@ func (d *peerMsgHandler) validateSplitRegion(epoch *metapb.RegionEpoch, splitKey
 }
 
 func (d *peerMsgHandler) onApproximateRegionSize(size uint64) {
+	if d.ApproximateSize == nil {
+		d.SizeDiffHint = size
+	} else {
+		d.SizeDiffHint += (size - *d.ApproximateSize)
+	}
 	d.ApproximateSize = &size
 }
 

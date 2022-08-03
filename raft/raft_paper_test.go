@@ -386,7 +386,7 @@ func TestLeaderStartReplication2AB(t *testing.T) {
 		{From: 1, To: 3, Term: 1, MsgType: pb.MessageType_MsgAppend, Index: li, LogTerm: 1, Entries: []*pb.Entry{&ent}, Commit: li},
 	}
 	if !reflect.DeepEqual(msgs, wmsgs) {
-		t.Errorf("msgs = %+v, want %+v", msgs, wmsgs)
+		t.Errorf("msgs = %+v, \nwant %+v", msgs, wmsgs)
 	}
 	if g := r.RaftLog.unstableEntries(); !reflect.DeepEqual(g, wents) {
 		t.Errorf("ents = %+v, want %+v", g, wents)

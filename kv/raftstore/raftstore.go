@@ -129,6 +129,7 @@ func (bs *Raftstore) loadPeers() ([]*peer, error) {
 			if bytes.Compare(item.Key(), endKey) >= 0 {
 				break
 			}
+			// 通过持久化的regionmetakey来找信息
 			regionID, suffix, err := meta.DecodeRegionMetaKey(item.Key())
 			if err != nil {
 				return err
@@ -147,16 +148,21 @@ func (bs *Raftstore) loadPeers() ([]*peer, error) {
 				return errors.WithStack(err)
 			}
 			region := localState.Region
+			// 判断这个store内部的region是否tombstone了
 			if localState.State == rspb.PeerState_Tombstone {
 				tombStoneCount++
+				// 这个localstate的state标志这个peer的死活
 				bs.clearStaleMeta(kvWB, raftWB, localState)
 				continue
 			}
-
+			// 创建peer，根据信息
+			// 当前storeid的peer
 			peer, err := createPeer(storeID, ctx.cfg, ctx.regionTaskSender, ctx.engine, region)
 			if err != nil {
 				return err
 			}
+			// 创建之后再放入这个store的storeMeta的regionRanges(这是一个bTree)
+			// region就包含这个peer的一些有用的信息，放入btree，轻量级
 			ctx.storeMeta.regionRanges.ReplaceOrInsert(&regionItem{region: region})
 			ctx.storeMeta.regions[regionID] = region
 			// No need to check duplicated here, because we use region id as the key
@@ -200,6 +206,7 @@ type workers struct {
 	wg               *sync.WaitGroup
 }
 
+// 有storereciver,有ticker，有router
 type Raftstore struct {
 	ctx        *GlobalContext
 	storeState *storeState
@@ -301,7 +308,9 @@ func (bs *Raftstore) shutDown() {
 }
 
 func CreateRaftstore(cfg *config.Config) (*RaftstoreRouter, *Raftstore) {
+	// 发送消息，state接受消息
 	storeSender, storeState := newStoreState(cfg)
+	// 发送器放进router中
 	router := newRouter(storeSender)
 	raftstore := &Raftstore{
 		router:     router,
